@@ -1,0 +1,109 @@
+import { useParams, Link } from "react-router-dom";
+import { products } from "@/data/products";
+import { getProductImage } from "@/components/ProductCard";
+import GracefulImage from "@/components/GracefulImage";
+import { useCart } from "@/contexts/CartContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { ShoppingBag, Star, ArrowLeft, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { useState } from "react";
+
+const ProductDetail = () => {
+  const { id } = useParams();
+  const product = products.find((p) => p.id === id);
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState(false);
+
+  if (!product) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-20 text-center">
+          <h1 className="font-display text-2xl text-foreground">Product not found</h1>
+          <Link to="/shop" className="mt-4 inline-block font-body text-sm text-primary">Back to Shop</Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const handleAdd = () => {
+    addToCart(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  return (
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="container mx-auto px-4 py-12 lg:px-8">
+        <Link to="/shop" className="mb-8 inline-flex items-center gap-2 font-body text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft size={14} /> Back to Shop
+        </Link>
+
+        <div className="grid gap-12 lg:grid-cols-2">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden rounded-xl bg-secondary">
+            <GracefulImage
+              src={getProductImage(product.images[0])}
+              alt={product.name}
+              className="w-full object-cover"
+            />
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">{product.categoryLabel}</p>
+            <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">{product.name}</h1>
+
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={14} className={i < Math.round(product.rating) ? "fill-gold text-gold" : "text-border"} />
+                ))}
+              </div>
+              <span className="font-body text-xs text-muted-foreground">{product.rating} ({product.reviewCount} reviews)</span>
+            </div>
+
+            <div className="mt-6 flex items-baseline gap-3">
+              <span className="font-display text-3xl font-bold text-foreground">₹{product.price}</span>
+              {product.originalPrice && (
+                <span className="font-body text-lg text-muted-foreground line-through">₹{product.originalPrice}</span>
+              )}
+            </div>
+
+            <p className="mt-6 font-body text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+
+            <button
+              onClick={handleAdd}
+              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow md:w-auto"
+            >
+              {added ? <><Check size={16} /> Added to Cart</> : <><ShoppingBag size={16} /> Add to Cart</>}
+            </button>
+
+            <div className="mt-10 space-y-6">
+              <div>
+                <h3 className="font-display text-sm font-semibold text-foreground">Materials</h3>
+                <ul className="mt-2 space-y-1">
+                  {product.materials.map((m) => (
+                    <li key={m} className="font-body text-sm text-muted-foreground">• {m}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-semibold text-foreground">Care Instructions</h3>
+                <ul className="mt-2 space-y-1">
+                  {product.careInstructions.map((c) => (
+                    <li key={c} className="font-body text-sm text-muted-foreground">• {c}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default ProductDetail;
