@@ -16,11 +16,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const syncGoogleProfile = async (user: User) => {
+    const meta = user.user_metadata;
+    const name = meta?.full_name || meta?.name;
+    const avatar = meta?.avatar_url || meta?.picture;
+
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!existing) {
+      // Row missing — create it with Google data
+      await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
+    } else if (!existing.full_name && name) {
+      // Row exists but name is empty — fill it in from Google
+      await supabase.from("profiles").update({ full_name: name, avatar_url: avatar }).eq("id", user.id);
+    }
+    // If name is already set by the user, do nothing
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.user) syncGoogleProfile(session.user);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

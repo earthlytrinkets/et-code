@@ -1,5 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
-import { ShoppingBag, Menu, X, Sun, Moon, User, LogOut } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ShoppingBag, Menu, X, Sun, Moon, User, LogOut, Settings } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ const Navbar = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   return (
     <>
@@ -88,12 +89,26 @@ const Navbar = () => {
                       exit={{ opacity: 0, y: 8 }}
                       className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-card p-2 shadow-elevated border border-border"
                     >
-                      <p className="px-3 py-2 font-body text-xs text-muted-foreground truncate">
-                        {user.email || user.phone}
-                      </p>
+                      <div className="px-3 py-2">
+                        {(user.user_metadata?.full_name || user.user_metadata?.name) && (
+                          <p className="font-body text-sm font-medium text-foreground truncate">
+                            {user.user_metadata?.full_name || user.user_metadata?.name}
+                          </p>
+                        )}
+                        <p className="font-body text-xs text-muted-foreground truncate">
+                          {user.email || user.phone}
+                        </p>
+                      </div>
                       <div className="h-px bg-border my-1" />
+                      <Link
+                        to="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <Settings size={14} /> My Profile
+                      </Link>
                       <button
-                        onClick={() => { signOut(); setUserMenuOpen(false); }}
+                        onClick={async () => { await signOut(); setUserMenuOpen(false); navigate('/'); }}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
                         <LogOut size={14} /> Sign Out

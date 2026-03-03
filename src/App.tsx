@@ -13,7 +13,9 @@ import Cart from "./pages/Cart";
 import CustomOrders from "./pages/CustomOrders";
 import Contact from "./pages/Contact";
 import ResetPassword from "./pages/ResetPassword";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,7 @@ const App = () => (
                 <Route path="/custom-orders" element={<CustomOrders />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
