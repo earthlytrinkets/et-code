@@ -1,16 +1,28 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { categories } from "@/data/products";
-import { Gem, BookOpen, Home, Sparkles } from "lucide-react";
+import { useCategories } from "@/hooks/useProducts";
+import { Gem, BookOpen, Home, Sparkles, Tag } from "lucide-react";
 
-const iconMap = {
+const iconMap: Record<string, React.ElementType> = {
   jewellery: Gem,
+  pendants: Gem,
   paperweights: BookOpen,
   "home-decor": Home,
   "custom-pieces": Sparkles,
 };
 
-const CategorySection = () => (
+const descMap: Record<string, string> = {
+  jewellery: "Handcrafted earrings, necklaces & more",
+  pendants: "Unique resin & clay pendant pieces",
+  paperweights: "Decorative resin paperweights",
+  "home-decor": "Beautify your living space",
+  "custom-pieces": "One-of-a-kind bespoke creations",
+};
+
+const CategorySection = () => {
+  const { data: categories = [] } = useCategories();
+
+  return (
   <section className="bg-secondary/40 py-24">
     <div className="container mx-auto px-4 lg:px-8">
       <div className="text-center">
@@ -24,7 +36,7 @@ const CategorySection = () => (
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {categories.map((cat, i) => {
-          const Icon = iconMap[cat.id];
+          const Icon = iconMap[cat.slug] ?? Tag;
           return (
             <motion.div
               key={cat.id}
@@ -34,17 +46,17 @@ const CategorySection = () => (
               transition={{ duration: 0.5, delay: i * 0.1 }}
             >
               <Link
-                to={`/shop?category=${cat.id}`}
+                to={`/shop?category=${cat.slug}`}
                 className="group block rounded-xl bg-card p-8 text-center shadow-soft transition-all hover:shadow-elevated"
               >
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                   <Icon size={24} />
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-                  {cat.label}
+                  {cat.name}
                 </h3>
                 <p className="mt-2 font-body text-sm text-muted-foreground">
-                  {cat.description}
+                  {descMap[cat.slug] ?? "Explore our collection"}
                 </p>
               </Link>
             </motion.div>
@@ -53,6 +65,7 @@ const CategorySection = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default CategorySection;

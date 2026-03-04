@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { products, categories } from "@/data/products";
+import { Search } from "lucide-react";
+import { useProducts, useCategories } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -19,19 +19,26 @@ const Shop = () => {
   const [sort, setSort] = useState("newest");
   const activeCategory = searchParams.get("category") || "all";
 
+  const { data: products = [], isLoading } = useProducts();
+  const { data: categories = [] } = useCategories();
+
   const filtered = useMemo(() => {
     let result = products;
     if (activeCategory !== "all") {
-      result = result.filter((p) => p.category === activeCategory);
+      result = result.filter((p) => p.categories?.slug === activeCategory);
     }
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter((p) => p.name.toLowerCase().includes(q) || p.shortDescription.toLowerCase().includes(q));
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.short_description ?? "").toLowerCase().includes(q)
+      );
     }
     if (sort === "price-low") result = [...result].sort((a, b) => a.price - b.price);
     if (sort === "price-high") result = [...result].sort((a, b) => b.price - a.price);
     return result;
-  }, [activeCategory, search, sort]);
+  }, [products, activeCategory, search, sort]);
 
   return (
     <div className="min-h-screen">
@@ -50,7 +57,9 @@ const Shop = () => {
             <button
               onClick={() => setSearchParams({})}
               className={`rounded-full px-4 py-2 font-body text-xs font-medium transition-colors ${
-                activeCategory === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                activeCategory === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
               }`}
             >
               All
@@ -58,12 +67,14 @@ const Shop = () => {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setSearchParams({ category: cat.id })}
+                onClick={() => setSearchParams({ category: cat.slug })}
                 className={`rounded-full px-4 py-2 font-body text-xs font-medium transition-colors ${
-                  activeCategory === cat.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                  activeCategory === cat.slug
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {cat.label}
+                {cat.name}
               </button>
             ))}
           </div>
@@ -92,16 +103,25 @@ const Shop = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="py-20 text-center">
-            <p className="font-body text-muted-foreground">No products found. Try a different filter.</p>
+        {isLoading ? (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="aspect-square animate-pulse rounded-lg bg-secondary" />
+            ))}
           </div>
+        ) : (
+          <>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filtered.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            {filtered.length === 0 && (
+              <div className="py-20 text-center">
+                <p className="font-body text-muted-foreground">No products found. Try a different filter.</p>
+              </div>
+            )}
+          </>
         )}
       </main>
       <Footer />

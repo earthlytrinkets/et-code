@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
-import { getProductImage } from "@/components/ProductCard";
 import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -48,7 +47,7 @@ const Cart = () => {
                 className="flex gap-4 rounded-xl bg-card p-4 shadow-soft"
               >
                 <GracefulImage
-                  src={getProductImage(item.product.images[0])}
+                  src={item.product.images[0] ?? ""}
                   alt={item.product.name}
                   className="h-24 w-24 rounded-lg object-cover"
                 />
@@ -56,7 +55,6 @@ const Cart = () => {
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-display text-sm font-semibold text-foreground">{item.product.name}</h3>
-                      <p className="font-body text-xs text-muted-foreground">{item.product.categoryLabel}</p>
                     </div>
                     <button onClick={() => removeFromCart(item.product.id)} className="text-muted-foreground hover:text-destructive">
                       <X size={16} />

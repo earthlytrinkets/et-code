@@ -1,12 +1,13 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Menu, X, Sun, Moon, User, LogOut, Settings } from "lucide-react";
+import { ShoppingBag, Menu, X, Sun, Moon, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "@/components/AuthModal";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -22,8 +23,20 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
 
   return (
     <>
@@ -100,6 +113,28 @@ const Navbar = () => {
                         </p>
                       </div>
                       <div className="h-px bg-border my-1" />
+                      {isAdmin && (
+                        <>
+                          <p className="px-3 pt-1 font-body text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Admin
+                          </p>
+                          <Link
+                            to="/admin/products"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                          >
+                            <LayoutDashboard size={14} /> Products
+                          </Link>
+                          <Link
+                            to="/admin/orders"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                          >
+                            <LayoutDashboard size={14} /> Orders
+                          </Link>
+                          <div className="h-px bg-border my-1" />
+                        </>
+                      )}
                       <Link
                         to="/profile"
                         onClick={() => setUserMenuOpen(false)}

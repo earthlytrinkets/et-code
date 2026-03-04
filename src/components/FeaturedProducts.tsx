@@ -1,10 +1,10 @@
-import { products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useFeaturedProducts } from "@/hooks/useProducts";
 
 const FeaturedProducts = () => {
-  const featured = products.filter((p) => p.featured);
+  const { data: featured = [], isLoading } = useFeaturedProducts();
 
   return (
     <section className="py-24">
@@ -26,11 +26,19 @@ const FeaturedProducts = () => {
           </Link>
         </div>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-square animate-pulse rounded-lg bg-secondary" />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {featured.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 text-center md:hidden">
           <Link
