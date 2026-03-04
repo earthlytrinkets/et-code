@@ -72,16 +72,19 @@ const ProductDetail = () => {
             <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">{product.name}</h1>
 
             {product.rating > 0 && (
-              <div className="mt-3 flex items-center gap-3">
+              <button
+                onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" })}
+                className="mt-3 flex items-center gap-3 hover:opacity-75 transition-opacity"
+              >
                 <div className="flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} size={14} className={i < Math.round(product.rating) ? "fill-gold text-gold" : "text-border"} />
                   ))}
                 </div>
-                <span className="font-body text-xs text-muted-foreground">
-                  {product.rating} ({product.review_count} reviews)
+                <span className="font-body text-xs text-muted-foreground underline underline-offset-2">
+                  {product.rating} ({product.review_count} {product.review_count === 1 ? "review" : "reviews"})
                 </span>
-              </div>
+              </button>
             )}
 
             <div className="mt-6 flex items-baseline gap-3">

@@ -76,3 +76,5 @@ RETURNS TABLE(user_id UUID) LANGUAGE sql SECURITY DEFINER AS $$
     AND  o.user_id IS NOT NULL
     AND  o.status IN ('confirmed', 'processing', 'shipped', 'delivered');
 $$;
+
+GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO anon, authenticated;

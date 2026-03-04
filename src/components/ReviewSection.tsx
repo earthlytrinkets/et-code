@@ -96,7 +96,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
     : 0;
 
   return (
-    <section className="mt-16 border-t border-border pt-12">
+    <section id="reviews" className="mt-16 border-t border-border pt-12">
       <div className="mb-8 flex items-end justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold text-foreground">Reviews</h2>

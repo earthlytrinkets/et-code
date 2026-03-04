@@ -20,3 +20,13 @@ ALTER TABLE public.reviews
 ALTER TABLE public.reviews
   ADD CONSTRAINT reviews_user_profile_fkey
   FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+-- 3. Allow anonymous (unauthenticated) users to call get_verified_buyers
+--    so the verified-buyer badge works even on public product pages.
+--    Wrapped in DO block in case 07_reviews.sql hasn't been run yet.
+DO $$
+BEGIN
+  GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO anon, authenticated;
+EXCEPTION WHEN undefined_function THEN
+  NULL; -- function not yet created; run 07_reviews.sql first
+END $$;

@@ -23,17 +23,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: existing } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("id, full_name, avatar_url")
       .eq("id", user.id)
       .maybeSingle();
 
     if (!existing) {
       await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
     } else {
-      // Always sync avatar; only fill name if user hasn't set one yet
-      const updates: Record<string, string | undefined> = { avatar_url: avatar ?? undefined };
+      // Only fill fields the user hasn't already customised
+      const updates: Record<string, string | undefined> = {};
       if (!existing.full_name && name) updates.full_name = name;
-      await supabase.from("profiles").update(updates).eq("id", user.id);
+      if (!existing.avatar_url && avatar) updates.avatar_url = avatar;
+      if (Object.keys(updates).length > 0)
+        await supabase.from("profiles").update(updates).eq("id", user.id);
     }
   };
 

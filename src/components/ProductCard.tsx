@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Star } from "lucide-react";
 import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
 
@@ -63,6 +63,18 @@ const ProductCard = ({ product }: { product: Product }) => {
             <span className="font-body text-xs text-muted-foreground line-through">₹{product.compare_at_price}</span>
           )}
         </div>
+        {product.rating > 0 && (
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="flex gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} size={10} className={i < Math.round(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-border"} />
+              ))}
+            </div>
+            <span className="font-body text-[10px] text-muted-foreground">
+              ({product.review_count})
+            </span>
+          </div>
+        )}
       </div>
     </motion.div>
   );
