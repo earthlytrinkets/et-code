@@ -380,7 +380,7 @@ export const AdminProductsSection = () => {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto overflow-hidden rounded-2xl border border-border">
+        <div className="overflow-x-auto overflow-y-auto max-h-[60vh] rounded-2xl border border-border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/40 text-left">

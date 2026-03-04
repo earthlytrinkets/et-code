@@ -11,7 +11,7 @@ import { toast } from "sonner";
 const budgetRanges = ["₹500 - ₹1,000", "₹1,000 - ₹2,500", "₹2,500 - ₹5,000", "₹5,000+"];
 
 const CustomOrders = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,20 +19,18 @@ const CustomOrders = () => {
   const [email, setEmail] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
-
-  // Redirect admins to the admin orders page
+  // Redirect unauthenticated users; redirect admins in the background
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) { navigate("/", { replace: true }); return; }
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle()
-      .then(({ data }) => {
-        if (data) navigate("/admin/orders", { replace: true });
-      });
-  }, [user, navigate]);
+      .then(({ data }) => { if (data) navigate("/admin/orders", { replace: true }); });
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +49,7 @@ const CustomOrders = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <main className="container mx-auto px-4 py-12 lg:px-8">
+      {!authLoading && user && <main className="container mx-auto px-4 py-12 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">Made just for you</p>
           <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">Custom Orders</h1>
@@ -144,7 +142,7 @@ const CustomOrders = () => {
             </form>
           )}
         </motion.div>
-      </main>
+      </main>}
       <Footer />
     </div>
   );

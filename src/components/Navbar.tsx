@@ -25,6 +25,7 @@ const Navbar = () => {
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,20 +55,32 @@ const Navbar = () => {
   });
 
   useEffect(() => {
-    if (!user) { setIsAdmin(false); return; }
+    if (!user) { setIsAdmin(false); setRoleChecked(true); return; }
+    // Apply cached value immediately (no flash for returning users)
+    const cached = localStorage.getItem(`et_admin_${user.id}`);
+    if (cached !== null) {
+      setIsAdmin(cached === "true");
+      setRoleChecked(true);
+    }
+    // Always verify with DB and update cache
     supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle()
-      .then(({ data }) => setIsAdmin(!!data));
+      .then(({ data }) => {
+        const admin = !!data;
+        setIsAdmin(admin);
+        setRoleChecked(true);
+        localStorage.setItem(`et_admin_${user.id}`, String(admin));
+      });
   }, [user]);
 
   return (
     <>
       <header className="sticky top-0 z-50 glass">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4 lg:px-8">
+        <div className="container mx-auto grid grid-cols-3 items-center px-4 py-4 lg:px-8">
           <Link to="/" className="flex items-center gap-3">
             <img src={logo} alt="Earthly Trinkets" className="h-10 w-10 rounded-full object-cover md:h-12 md:w-12" />
             <span className="font-display text-xl font-bold italic tracking-wide text-foreground md:text-2xl lg:text-[1.7rem]">
@@ -76,8 +89,14 @@ const Navbar = () => {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            {navLinks.filter((link) => !(isAdmin && link.to === "/custom-orders")).map((link) => (
+          <nav className="hidden items-center justify-center gap-8 md:flex">
+            {navLinks.filter((link) => {
+                  if (link.to === "/custom-orders")
+                    return !!user && !(roleChecked && isAdmin);
+                  if (link.to === "/contact")
+                    return !(roleChecked && isAdmin);
+                  return true;
+                }).map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -92,7 +111,7 @@ const Navbar = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={toggleTheme}
               className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
@@ -199,7 +218,13 @@ const Navbar = () => {
               className="overflow-hidden border-t border-border md:hidden"
             >
               <div className="container mx-auto flex flex-col gap-1 px-4 py-4">
-                {navLinks.filter((link) => !(isAdmin && link.to === "/custom-orders")).map((link) => (
+                {navLinks.filter((link) => {
+                  if (link.to === "/custom-orders")
+                    return !!user && !(roleChecked && isAdmin);
+                  if (link.to === "/contact")
+                    return !(roleChecked && isAdmin);
+                  return true;
+                }).map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
