@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -14,6 +15,7 @@ const ProductDetail = () => {
   useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
   const { addToCart } = useCart();
+  const { isAdmin, roleChecked } = useIsAdmin();
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
@@ -101,17 +103,19 @@ const ProductDetail = () => {
               <p className="mt-3 font-body text-sm leading-relaxed text-muted-foreground">{product.description}</p>
             )}
 
-            <button
-              onClick={handleAdd}
-              disabled={product.stock === 0}
-              className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50 md:w-auto"
-            >
-              {product.stock === 0
-                ? "Out of Stock"
-                : added
-                ? <><Check size={16} /> Added to Cart</>
-                : <><ShoppingBag size={16} /> Add to Cart</>}
-            </button>
+            {!(roleChecked && isAdmin) && (
+              <button
+                onClick={handleAdd}
+                disabled={product.stock === 0}
+                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50 md:w-auto"
+              >
+                {product.stock === 0
+                  ? "Out of Stock"
+                  : added
+                  ? <><Check size={16} /> Added to Cart</>
+                  : <><ShoppingBag size={16} /> Add to Cart</>}
+              </button>
+            )}
 
             {(product.materials.length > 0 || product.care_instructions.length > 0) && (
               <div className="mt-10 space-y-6">

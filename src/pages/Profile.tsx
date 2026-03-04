@@ -541,23 +541,154 @@ const AddressesSection = ({
 
 // ─── Orders Section ───────────────────────────────────────────────────────────
 
-const OrdersSection = () => (
-  <div className="space-y-5">
-    <div>
-      <h2 className="font-display text-xl font-bold text-foreground">My Orders</h2>
-      <p className="font-body text-sm text-muted-foreground mt-1">
-        Track and manage your orders.
-      </p>
+const ORDER_STATUS_STYLE: Record<string, string> = {
+  pending:          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  confirmed:        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  processing:       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  shipped:          "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  out_for_delivery: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  delivered:        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  cancelled:        "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+  refunded:         "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+};
+
+const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending: "Pending", confirmed: "Confirmed", processing: "Processing",
+  shipped: "Shipped", out_for_delivery: "Out for Delivery",
+  delivered: "Delivered", cancelled: "Cancelled", refunded: "Refunded",
+};
+
+const OrdersSection = ({ userId }: { userId: string }) => {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ["user-orders", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-display text-xl font-bold text-foreground">My Orders</h2>
+        <p className="font-body text-sm text-muted-foreground mt-1">Track and manage your orders.</p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-secondary" />)}
+        </div>
+      ) : orders.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
+          <ShoppingBag size={36} className="text-muted-foreground/40" />
+          <p className="font-display text-lg font-semibold text-foreground">No orders yet</p>
+          <p className="font-body text-sm text-muted-foreground max-w-xs">
+            Once you place an order, all your order history and tracking details will appear here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {orders.map((order: {
+            id: string; created_at: string; status: string; total: number;
+            discount_amount: number; coupon_code: string | null;
+            payment_method: string; shiprocket_awb: string | null; shipping_method: string | null;
+            shipping_address: { full_name: string; line1: string; line2?: string; city: string; state: string; pincode: string };
+            order_items: { id: string; product_name: string; product_image: string | null; price: number; quantity: number }[];
+          }) => {
+            const isOpen = expandedId === order.id;
+            const date = new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+            return (
+              <div key={order.id} className="overflow-hidden rounded-xl border border-border bg-card">
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : order.id)}
+                  className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-secondary/30 transition-colors"
+                >
+                  <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-0.5 sm:grid-cols-3">
+                    <div>
+                      <p className="font-body text-xs text-muted-foreground">Order ID</p>
+                      <p className="font-body text-sm font-medium text-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <p className="font-body text-xs text-muted-foreground">Date</p>
+                      <p className="font-body text-sm text-foreground">{date}</p>
+                    </div>
+                    <div>
+                      <p className="font-body text-xs text-muted-foreground">Total</p>
+                      <p className="font-body text-sm font-semibold text-foreground">₹{order.total}</p>
+                    </div>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-body text-[11px] font-semibold ${ORDER_STATUS_STYLE[order.status] ?? ""}`}>
+                    {ORDER_STATUS_LABEL[order.status] ?? order.status}
+                  </span>
+                  <ChevronRight size={14} className={`text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                </button>
+
+                {isOpen && (
+                  <div className="border-t border-border px-5 py-4 space-y-4">
+                    {/* Items */}
+                    <div className="space-y-2">
+                      {order.order_items.map((item) => (
+                        <div key={item.id} className="flex items-center gap-3">
+                          {item.product_image ? (
+                            <img src={item.product_image} alt={item.product_name} className="h-10 w-10 rounded-lg object-cover border border-border" />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                              <Package size={14} className="text-muted-foreground" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body text-sm text-foreground truncate">{item.product_name}</p>
+                            <p className="font-body text-xs text-muted-foreground">Qty {item.quantity} × ₹{item.price}</p>
+                          </div>
+                          <p className="font-body text-sm font-semibold">₹{item.price * item.quantity}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Summary */}
+                    <div className="rounded-lg bg-secondary/50 px-4 py-3 space-y-1 font-body text-sm">
+                      {order.discount_amount > 0 && (
+                        <div className="flex justify-between text-primary">
+                          <span>Discount {order.coupon_code ? `(${order.coupon_code})` : ""}</span>
+                          <span>−₹{order.discount_amount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold">
+                        <span>Total</span><span>₹{order.total}</span>
+                      </div>
+                      <div className="flex justify-between text-muted-foreground text-xs">
+                        <span>Payment</span>
+                        <span>{order.payment_method === "cod" ? "Cash on Delivery" : "Paid Online"}</span>
+                      </div>
+                      {order.shiprocket_awb && (
+                        <div className="flex justify-between text-muted-foreground text-xs">
+                          <span>Tracking / AWB</span>
+                          <span className="font-semibold text-foreground">{order.shiprocket_awb}</span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Delivery address */}
+                    <div className="font-body text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground uppercase tracking-wider">Deliver to: </span>
+                      {order.shipping_address.line1}{order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ""},{" "}
+                      {order.shipping_address.city}, {order.shipping_address.state} – {order.shipping_address.pincode}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
-      <ShoppingBag size={36} className="text-muted-foreground/40" />
-      <p className="font-display text-lg font-semibold text-foreground">No orders yet</p>
-      <p className="font-body text-sm text-muted-foreground max-w-xs">
-        Once you place an order, all your order history and tracking details will appear here.
-      </p>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── Main Profile Page ────────────────────────────────────────────────────────
 
@@ -784,7 +915,7 @@ const ProfilePage = () => {
                 )
               )}
 
-              {activeSection === "orders" && <OrdersSection />}
+              {activeSection === "orders" && <OrdersSection userId={user!.id} />}
               {activeSection === "admin-products" && <AdminProductsSection />}
               {activeSection === "admin-orders" && <AdminOrdersSection />}
             </div>

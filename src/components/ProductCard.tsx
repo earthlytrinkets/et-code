@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ShoppingBag, Star } from "lucide-react";
 import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const { addToCart } = useCart();
+  const { isAdmin, roleChecked } = useIsAdmin();
 
   const imageUrl = product.images[0] ?? "";
   const categoryLabel = product.categories?.name ?? "";
@@ -37,17 +39,19 @@ const ProductCard = ({ product }: { product: Product }) => {
               Sale
             </span>
           )}
-          <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
-              }}
-              className="rounded-full bg-card p-2.5 shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-            >
-              <ShoppingBag size={14} />
-            </button>
-          </div>
+          {!(roleChecked && isAdmin) && (
+            <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                }}
+                className="rounded-full bg-card p-2.5 shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+              >
+                <ShoppingBag size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </Link>
       <div className="mt-3 px-1">

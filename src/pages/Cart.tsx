@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCheckout } from "@/contexts/CheckoutContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -20,6 +22,13 @@ interface Coupon {
 const Cart = () => {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const { user } = useAuth();
+  const { setCoupon } = useCheckout();
+  const { isAdmin, roleChecked } = useIsAdmin();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (roleChecked && isAdmin) navigate("/shop", { replace: true });
+  }, [isAdmin, roleChecked, navigate]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -203,7 +212,11 @@ const Cart = () => {
             </div>
 
             <button
-              onClick={() => { if (!user) setAuthModalOpen(true); }}
+              onClick={() => {
+                if (!user) { setAuthModalOpen(true); return; }
+                setCoupon(appliedCoupon, discountAmount);
+                navigate("/checkout/address");
+              }}
               className="w-full rounded-full bg-primary py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
             >
               Proceed to Checkout

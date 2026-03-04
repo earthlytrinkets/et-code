@@ -3,6 +3,7 @@ import { ShoppingBag, Menu, X, Sun, Moon, LogOut, Settings } from "lucide-react"
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,12 +11,6 @@ import AuthModal from "@/components/AuthModal";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
-const navLinks = [
-  { to: "/", label: "Home" },
-  { to: "/shop", label: "Shop" },
-  { to: "/custom-orders", label: "Custom Orders" },
-  { to: "/contact", label: "Contact" },
-];
 
 const Navbar = () => {
   const { totalItems } = useCart();
@@ -24,8 +19,14 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [roleChecked, setRoleChecked] = useState(false);
+  const { isAdmin, roleChecked } = useIsAdmin();
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/shop", label: roleChecked && isAdmin ? "Shop (View Only)" : "Shop" },
+    ...(!!user && !(roleChecked && isAdmin) ? [{ to: "/custom-orders", label: "Custom Orders" }] : []),
+    ...(!(roleChecked && isAdmin) ? [{ to: "/contact", label: "Contact" }] : []),
+  ];
   const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,28 +55,6 @@ const Navbar = () => {
     enabled: !!user,
   });
 
-  useEffect(() => {
-    if (!user) { setIsAdmin(false); setRoleChecked(true); return; }
-    // Apply cached value immediately (no flash for returning users)
-    const cached = localStorage.getItem(`et_admin_${user.id}`);
-    if (cached !== null) {
-      setIsAdmin(cached === "true");
-      setRoleChecked(true);
-    }
-    // Always verify with DB and update cache
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => {
-        const admin = !!data;
-        setIsAdmin(admin);
-        setRoleChecked(true);
-        localStorage.setItem(`et_admin_${user.id}`, String(admin));
-      });
-  }, [user]);
 
   return (
     <>
@@ -90,13 +69,7 @@ const Navbar = () => {
           </Link>
 
           <nav className="hidden items-center justify-center gap-8 md:flex">
-            {navLinks.filter((link) => {
-                  if (link.to === "/custom-orders")
-                    return !!user && !(roleChecked && isAdmin);
-                  if (link.to === "/contact")
-                    return !(roleChecked && isAdmin);
-                  return true;
-                }).map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -119,17 +92,19 @@ const Navbar = () => {
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
-            <Link
-              to="/cart"
-              className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <ShoppingBag size={18} />
-              {totalItems > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
+            {!(roleChecked && isAdmin) && (
+              <Link
+                to="/cart"
+                className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <ShoppingBag size={18} />
+                {totalItems > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {user ? (
               <div className="relative" ref={userMenuRef}>
@@ -218,13 +193,7 @@ const Navbar = () => {
               className="overflow-hidden border-t border-border md:hidden"
             >
               <div className="container mx-auto flex flex-col gap-1 px-4 py-4">
-                {navLinks.filter((link) => {
-                  if (link.to === "/custom-orders")
-                    return !!user && !(roleChecked && isAdmin);
-                  if (link.to === "/contact")
-                    return !(roleChecked && isAdmin);
-                  return true;
-                }).map((link) => (
+                {navLinks.map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}
