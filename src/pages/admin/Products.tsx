@@ -44,6 +44,8 @@ const EMPTY_FORM: ProductForm = {
 const toSlug = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+
 const uploadImage = async (file: File): Promise<string> => {
   const ext = file.name.split(".").pop();
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -51,8 +53,7 @@ const uploadImage = async (file: File): Promise<string> => {
     .from("product-images")
     .upload(filename, file, { upsert: false });
   if (error) throw error;
-  const { data } = supabase.storage.from("product-images").getPublicUrl(filename);
-  return data.publicUrl;
+  return `${SUPABASE_URL}/storage/v1/object/public/product-images/${filename}`;
 };
 
 // ─── Image Uploader ───────────────────────────────────────────────────────────

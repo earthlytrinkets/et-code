@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +19,11 @@ import {
   Check,
   Star,
   ChevronRight,
+  Camera,
+  Loader2,
 } from "lucide-react";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -92,12 +96,20 @@ const ProfileSection = ({
   oauthName,
   onSave,
   saving,
+  onAvatarClick,
+  onAvatarChange,
+  avatarInputRef,
+  avatarUploading,
 }: {
   profile: Profile | undefined;
   email: string | undefined;
   oauthName?: string;
   onSave: (data: { full_name: string; phone: string }) => void;
   saving: boolean;
+  onAvatarClick: () => void;
+  onAvatarChange: (file: File) => void;
+  avatarInputRef: React.RefObject<HTMLInputElement>;
+  avatarUploading: boolean;
 }) => {
   const [name, setName] = useState(profile?.full_name || oauthName || "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
@@ -113,17 +125,41 @@ const ProfileSection = ({
 
       {/* Avatar + name header */}
       <div className="flex items-center gap-4 rounded-2xl bg-secondary/40 p-4">
-        {profile?.avatar_url ? (
-          <img
-            src={profile.avatar_url}
-            alt="Avatar"
-            className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/20"
-          />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary ring-2 ring-primary/20">
+        <button
+          type="button"
+          onClick={onAvatarClick}
+          disabled={avatarUploading}
+          className="relative shrink-0 group"
+          title="Change profile photo"
+        >
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="Avatar"
+              referrerPolicy="no-referrer"
+              className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/20"
+              onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.removeAttribute("style"); }}
+            />
+          ) : null}
+          <div
+            style={profile?.avatar_url ? { display: "none" } : undefined}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary ring-2 ring-primary/20"
+          >
             <User size={24} className="text-muted-foreground" />
           </div>
-        )}
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+            {avatarUploading
+              ? <Loader2 size={16} className="animate-spin text-white" />
+              : <Camera size={16} className="text-white" />}
+          </div>
+        </button>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onAvatarChange(f); e.target.value = ""; }}
+        />
         <div>
           <p className="font-body font-semibold text-foreground">
             {profile?.full_name || oauthName || "Your Name"}
@@ -525,6 +561,33 @@ const ProfilePage = () => {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<Section>("profile");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user) return;
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const avatarUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${path}?t=${Date.now()}`;
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+      if (updateError) throw updateError;
+      queryClient.invalidateQueries({ queryKey: ["profile", user.id] });
+      toast.success("Profile picture updated!");
+    } catch {
+      toast.error("Failed to upload photo");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", user?.id],
@@ -600,13 +663,17 @@ const ProfilePage = () => {
                 <img
                   src={profile.avatar_url}
                   alt="Avatar"
+                  referrerPolicy="no-referrer"
                   className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20"
+                  onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.removeAttribute("style"); }}
                 />
-              ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary ring-2 ring-primary/20">
-                  <User size={20} className="text-muted-foreground" />
-                </div>
-              )}
+              ) : null}
+              <div
+                style={profile?.avatar_url ? { display: "none" } : undefined}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary ring-2 ring-primary/20"
+              >
+                <User size={20} className="text-muted-foreground" />
+              </div>
               <div className="min-w-0">
                 <p className="font-body font-semibold text-foreground truncate">
                   {profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "My Account"}
@@ -672,6 +739,10 @@ const ProfilePage = () => {
                   oauthName={user?.user_metadata?.full_name || user?.user_metadata?.name}
                   onSave={(data) => updateProfile.mutate(data)}
                   saving={updateProfile.isPending}
+                  onAvatarClick={() => avatarInputRef.current?.click()}
+                  onAvatarChange={handleAvatarUpload}
+                  avatarInputRef={avatarInputRef}
+                  avatarUploading={avatarUploading}
                 />
               )}
 

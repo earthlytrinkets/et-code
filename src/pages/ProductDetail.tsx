@@ -4,12 +4,14 @@ import { useCart } from "@/contexts/CartContext";
 import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ReviewSection from "@/components/ReviewSection";
 import { ShoppingBag, Star, ArrowLeft, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
+  useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
@@ -129,6 +131,8 @@ const ProductDetail = () => {
             )}
           </motion.div>
         </div>
+
+        <ReviewSection productId={product.id} />
       </main>
       <Footer />
     </div>

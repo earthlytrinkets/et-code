@@ -4,6 +4,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "@/components/AuthModal";
 import logo from "@/assets/logo.png";
@@ -26,6 +27,20 @@ const Navbar = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Share cache key with Profile page so avatar updates instantly everywhere
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, full_name")
+        .eq("id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!user) { setIsAdmin(false); return; }
@@ -90,9 +105,25 @@ const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className="rounded-full p-0.5 text-muted-foreground transition-colors hover:ring-2 hover:ring-primary/30"
                 >
-                  <User size={18} />
+                  {(() => {
+                    const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+                    const initials = (profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email || "?")[0].toUpperCase();
+                    return avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="avatar"
+                        referrerPolicy="no-referrer"
+                        className="h-8 w-8 rounded-full object-cover"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget.nextElementSibling as HTMLElement)?.removeAttribute("style"); }}
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-display font-bold text-sm">
+                        {initials}
+                      </div>
+                    );
+                  })()}
                 </button>
                 <AnimatePresence>
                   {userMenuOpen && (

@@ -28,13 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
 
     if (!existing) {
-      // Row missing — create it with Google data
       await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
-    } else if (!existing.full_name && name) {
-      // Row exists but name is empty — fill it in from Google
-      await supabase.from("profiles").update({ full_name: name, avatar_url: avatar }).eq("id", user.id);
+    } else {
+      // Always sync avatar; only fill name if user hasn't set one yet
+      const updates: Record<string, string | undefined> = { avatar_url: avatar ?? undefined };
+      if (!existing.full_name && name) updates.full_name = name;
+      await supabase.from("profiles").update(updates).eq("id", user.id);
     }
-    // If name is already set by the user, do nothing
   };
 
   useEffect(() => {
