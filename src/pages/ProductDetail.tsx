@@ -94,7 +94,12 @@ const ProductDetail = () => {
               )}
             </div>
 
-            <p className="mt-6 font-body text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+            {product.short_description && (
+              <p className="mt-6 font-body text-base italic text-muted-foreground/60 leading-relaxed">{product.short_description}</p>
+            )}
+            {product.description && (
+              <p className="mt-3 font-body text-sm leading-relaxed text-muted-foreground">{product.description}</p>
+            )}
 
             <button
               onClick={handleAdd}

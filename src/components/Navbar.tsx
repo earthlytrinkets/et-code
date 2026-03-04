@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Menu, X, Sun, Moon, User, LogOut, Settings, LayoutDashboard } from "lucide-react";
+import { ShoppingBag, Menu, X, Sun, Moon, LogOut, Settings } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,7 +66,7 @@ const Navbar = () => {
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
-            {navLinks.map((link) => (
+            {navLinks.filter((link) => !(isAdmin && link.to === "/custom-orders")).map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -144,34 +144,12 @@ const Navbar = () => {
                         </p>
                       </div>
                       <div className="h-px bg-border my-1" />
-                      {isAdmin && (
-                        <>
-                          <p className="px-3 pt-1 font-body text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                            Admin
-                          </p>
-                          <Link
-                            to="/admin/products"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                          >
-                            <LayoutDashboard size={14} /> Products
-                          </Link>
-                          <Link
-                            to="/admin/orders"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                          >
-                            <LayoutDashboard size={14} /> Orders
-                          </Link>
-                          <div className="h-px bg-border my-1" />
-                        </>
-                      )}
                       <Link
                         to="/profile"
                         onClick={() => setUserMenuOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
-                        <Settings size={14} /> My Profile
+                        <Settings size={14} /> Settings
                       </Link>
                       <button
                         onClick={async () => { await signOut(); setUserMenuOpen(false); navigate('/'); }}
@@ -210,7 +188,7 @@ const Navbar = () => {
               className="overflow-hidden border-t border-border md:hidden"
             >
               <div className="container mx-auto flex flex-col gap-1 px-4 py-4">
-                {navLinks.map((link) => (
+                {navLinks.filter((link) => !(isAdmin && link.to === "/custom-orders")).map((link) => (
                   <Link
                     key={link.to}
                     to={link.to}

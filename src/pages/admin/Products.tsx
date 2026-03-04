@@ -333,9 +333,9 @@ const ProductFormModal = ({
   );
 };
 
-// ─── Main Admin Products Page ─────────────────────────────────────────────────
+// ─── Products Section (embeddable) ───────────────────────────────────────────
 
-const AdminProducts = () => {
+export const AdminProductsSection = () => {
   const { data: products = [], isLoading } = useAllProducts();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Product | null | "new">(null);
@@ -362,113 +362,110 @@ const AdminProducts = () => {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <main className="container mx-auto px-4 py-10 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Products</h1>
-            <p className="font-body text-sm text-muted-foreground">{products.length} total</p>
-          </div>
-          <Button onClick={() => setEditing("new")}>
-            <Plus size={14} className="mr-1.5" /> Add Product
-          </Button>
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-xl font-bold text-foreground">Products</h2>
+          <p className="font-body text-sm text-muted-foreground">{products.length} total</p>
         </div>
+        <Button onClick={() => setEditing("new")}>
+          <Plus size={14} className="mr-1.5" /> Add Product
+        </Button>
+      </div>
 
-        {isLoading ? (
-          <div className="mt-8 space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-xl bg-secondary" />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/40 text-left">
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Product</th>
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Category</th>
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Price</th>
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Stock</th>
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {products.map((p) => (
-                  <tr key={p.id} className="transition-colors hover:bg-secondary/30">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {p.images[0] ? (
-                          <img src={p.images[0]} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                            <ImageIcon size={14} className="text-muted-foreground" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-body font-medium text-foreground">{p.name}</p>
-                          <p className="font-body text-xs text-muted-foreground">{p.slug}</p>
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-secondary" />
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-x-auto overflow-hidden rounded-2xl border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary/40 text-left">
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Product</th>
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Category</th>
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Price</th>
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Stock</th>
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {products.map((p) => (
+                <tr key={p.id} className="transition-colors hover:bg-secondary/30">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      {p.images[0] ? (
+                        <img src={p.images[0]} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                          <ImageIcon size={14} className="text-muted-foreground" />
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-body text-muted-foreground">{p.categories?.name ?? "—"}</td>
-                    <td className="px-4 py-3 font-body text-foreground">
-                      ₹{p.price}
-                      {p.compare_at_price && (
-                        <span className="ml-1 text-xs text-muted-foreground line-through">₹{p.compare_at_price}</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 font-body text-foreground">{p.stock}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          title={p.is_active ? "Deactivate" : "Activate"}
-                          onClick={() => toggle.mutate({ id: p.id, field: "is_active", value: !p.is_active })}
-                          className={`rounded-full p-1.5 transition-colors ${p.is_active ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary"}`}
-                        >
-                          {p.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </button>
-                        <button
-                          title={p.is_featured ? "Unfeature" : "Feature"}
-                          onClick={() => toggle.mutate({ id: p.id, field: "is_featured", value: !p.is_featured })}
-                          className={`rounded-full p-1.5 transition-colors ${p.is_featured ? "text-amber-500 hover:bg-amber-50" : "text-muted-foreground hover:bg-secondary"}`}
-                        >
-                          <Star size={14} />
-                        </button>
+                      <div>
+                        <p className="font-body font-medium text-foreground">{p.name}</p>
+                        <p className="font-body text-xs text-muted-foreground">{p.slug}</p>
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setEditing(p)}
-                          className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id);
-                          }}
-                          className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-body text-muted-foreground">{p.categories?.name ?? "—"}</td>
+                  <td className="px-4 py-3 font-body text-foreground">
+                    ₹{p.price}
+                    {p.compare_at_price && (
+                      <span className="ml-1 text-xs text-muted-foreground line-through">₹{p.compare_at_price}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-body text-foreground">{p.stock}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button
+                        title={p.is_active ? "Deactivate" : "Activate"}
+                        onClick={() => toggle.mutate({ id: p.id, field: "is_active", value: !p.is_active })}
+                        className={`rounded-full p-1.5 transition-colors ${p.is_active ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary"}`}
+                      >
+                        {p.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+                      </button>
+                      <button
+                        title={p.is_featured ? "Unfeature" : "Feature"}
+                        onClick={() => toggle.mutate({ id: p.id, field: "is_featured", value: !p.is_featured })}
+                        className={`rounded-full p-1.5 transition-colors ${p.is_featured ? "text-amber-500 hover:bg-amber-50" : "text-muted-foreground hover:bg-secondary"}`}
+                      >
+                        <Star size={14} />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditing(p)}
+                        className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id);
+                        }}
+                        className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-            {products.length === 0 && (
-              <div className="py-16 text-center font-body text-muted-foreground">
-                No products yet. Click "Add Product" to create the first one.
-              </div>
-            )}
-          </div>
-        )}
-      </main>
+          {products.length === 0 && (
+            <div className="py-16 text-center font-body text-muted-foreground">
+              No products yet. Click "Add Product" to create the first one.
+            </div>
+          )}
+        </div>
+      )}
 
       {editing !== null && (
         <ProductFormModal
@@ -479,5 +476,16 @@ const AdminProducts = () => {
     </div>
   );
 };
+
+// ─── Standalone page (keeps existing route working) ───────────────────────────
+
+const AdminProducts = () => (
+  <div className="min-h-screen bg-background">
+    <Navbar />
+    <main className="container mx-auto px-4 py-10 lg:px-8">
+      <AdminProductsSection />
+    </main>
+  </div>
+);
 
 export default AdminProducts;

@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { AdminProductsSection } from "@/pages/admin/Products";
+import { AdminOrdersSection } from "@/pages/admin/Orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,8 @@ import {
   ChevronRight,
   Camera,
   Loader2,
+  Package,
+  LayoutDashboard,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -63,7 +67,7 @@ const emptyAddressForm: AddressFormData = {
   is_default: false,
 };
 
-type Section = "profile" | "addresses" | "orders";
+type Section = "profile" | "addresses" | "orders" | "admin-products" | "admin-orders";
 
 // ─── Sidebar nav items ────────────────────────────────────────────────────────
 
@@ -557,12 +561,30 @@ const OrdersSection = () => (
 
 // ─── Main Profile Page ────────────────────────────────────────────────────────
 
+const adminNavItems: { id: Section; label: string; icon: React.ElementType; description: string }[] = [
+  { id: "profile",         label: "Account",  icon: User,            description: "Name, email & photo" },
+  { id: "admin-products",  label: "Products", icon: Package,         description: "Manage catalogue" },
+  { id: "admin-orders",    label: "Orders",   icon: LayoutDashboard, description: "Shop & custom orders" },
+];
+
 const ProfilePage = () => {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<Section>("profile");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
 
   const handleAvatarUpload = async (file: File) => {
     if (!user) return;
@@ -684,10 +706,10 @@ const ProfilePage = () => {
 
             {/* Nav list */}
             <nav className="overflow-hidden rounded-2xl border border-border bg-card">
-              {navItems.map((item, index) => {
+              {(isAdmin ? adminNavItems : navItems).map((item, index, arr) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
-                const isLast = index === navItems.length - 1;
+                const isLast = index === arr.length - 1;
 
                 return (
                   <button
@@ -763,6 +785,8 @@ const ProfilePage = () => {
               )}
 
               {activeSection === "orders" && <OrdersSection />}
+              {activeSection === "admin-products" && <AdminProductsSection />}
+              {activeSection === "admin-orders" && <AdminOrdersSection />}
             </div>
           </div>
 

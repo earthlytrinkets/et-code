@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_orders: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          description: string
+          budget_range: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          description: string
+          budget_range?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          description?: string
+          budget_range?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

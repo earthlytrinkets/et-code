@@ -1,17 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
 import { Upload, Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const budgetRanges = ["₹500 - ₹1,000", "₹1,000 - ₹2,500", "₹2,500 - ₹5,000", "₹5,000+"];
 
 const CustomOrders = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect admins to the admin orders page
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) navigate("/admin/orders", { replace: true });
+      });
+  }, [user, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    const { error } = await supabase
+      .from("custom_orders" as never)
+      .insert({ name, email, description, budget_range: budget || null } as never);
+    if (error) {
+      toast.error("Failed to submit request. Please try again.");
+    } else {
+      setSubmitted(true);
+    }
+    setLoading(false);
   };
 
   return (
@@ -35,17 +69,38 @@ const CustomOrders = () => {
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
                   <label className="font-body text-sm font-medium text-foreground">Name</label>
-                  <input required type="text" className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring" placeholder="Your name" />
+                  <input
+                    required
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Your name"
+                  />
                 </div>
                 <div>
                   <label className="font-body text-sm font-medium text-foreground">Email</label>
-                  <input required type="email" className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring" placeholder="your@email.com" />
+                  <input
+                    required
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="your@email.com"
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="font-body text-sm font-medium text-foreground">Description</label>
-                <textarea required rows={4} className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Describe what you'd like us to create..." />
+                <textarea
+                  required
+                  rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring resize-none"
+                  placeholder="Describe what you'd like us to create..."
+                />
               </div>
 
               <div>
@@ -53,7 +108,14 @@ const CustomOrders = () => {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {budgetRanges.map((range) => (
                     <label key={range} className="cursor-pointer">
-                      <input type="radio" name="budget" value={range} className="peer sr-only" />
+                      <input
+                        type="radio"
+                        name="budget"
+                        value={range}
+                        checked={budget === range}
+                        onChange={() => setBudget(range)}
+                        className="peer sr-only"
+                      />
                       <span className="block rounded-full border border-border px-4 py-2 font-body text-xs text-muted-foreground transition-colors peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground hover:bg-secondary">
                         {range}
                       </span>
@@ -74,9 +136,10 @@ const CustomOrders = () => {
 
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50"
               >
-                Submit Request <Send size={14} />
+                {loading ? "Submitting..." : <><span>Submit Request</span> <Send size={14} /></>}
               </button>
             </form>
           )}
