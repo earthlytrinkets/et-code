@@ -114,7 +114,8 @@ const CheckoutPayment = () => {
       price: item.product.price,
       quantity: item.quantity,
     }));
-    await supabase.from("order_items").insert(orderItems);
+    const { error } = await (supabase.from("order_items" as never) as any).insert(orderItems);
+    if (error) console.error("order_items insert failed:", error.message);
   };
 
   const handleCOD = async () => {

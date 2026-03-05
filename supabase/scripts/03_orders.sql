@@ -54,6 +54,11 @@ CREATE POLICY "Users can create orders"
 ON public.orders FOR INSERT TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
+CREATE POLICY "Users can update own orders"
+ON public.orders FOR UPDATE TO authenticated
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
 CREATE POLICY "Admins can manage orders"
 ON public.orders FOR ALL TO authenticated
 USING (public.has_role(auth.uid(), 'admin'::app_role));
@@ -62,6 +67,15 @@ USING (public.has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Users can view own order items"
 ON public.order_items FOR SELECT TO authenticated
 USING (
+  EXISTS (
+    SELECT 1 FROM public.orders
+    WHERE id = order_items.order_id AND user_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Users can insert own order items"
+ON public.order_items FOR INSERT TO authenticated
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM public.orders
     WHERE id = order_items.order_id AND user_id = auth.uid()

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   MapPin,
@@ -25,6 +26,7 @@ import {
   Loader2,
   Package,
   LayoutDashboard,
+  Truck,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -630,57 +632,97 @@ const OrdersSection = ({ userId }: { userId: string }) => {
                   <ChevronRight size={14} className={`text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
                 </button>
 
-                {isOpen && (
-                  <div className="border-t border-border px-5 py-4 space-y-4">
-                    {/* Items */}
-                    <div className="space-y-2">
-                      {order.order_items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3">
-                          {item.product_image ? (
-                            <img src={item.product_image} alt={item.product_name} className="h-10 w-10 rounded-lg object-cover border border-border" />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                              <Package size={14} className="text-muted-foreground" />
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="details"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-border px-5 py-5 space-y-5">
+
+                        {/* Items — larger cards */}
+                        <div>
+                          <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Items Ordered</p>
+                          <div className="space-y-3">
+                            {order.order_items.map((item) => (
+                              <div key={item.id} className="flex items-center gap-4 rounded-xl bg-secondary/40 p-3">
+                                {item.product_image ? (
+                                  <img
+                                    src={item.product_image}
+                                    alt={item.product_name}
+                                    className="h-16 w-16 shrink-0 rounded-xl object-cover border border-border"
+                                  />
+                                ) : (
+                                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary border border-border">
+                                    <Package size={20} className="text-muted-foreground" />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-body text-sm font-medium text-foreground">{item.product_name}</p>
+                                  <p className="font-body text-xs text-muted-foreground mt-0.5">
+                                    Qty {item.quantity} × ₹{item.price}
+                                  </p>
+                                </div>
+                                <p className="font-body text-sm font-bold text-foreground shrink-0">₹{item.price * item.quantity}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Price summary */}
+                        <div className="rounded-xl border border-border bg-card px-4 py-3 space-y-2 font-body text-sm">
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Subtotal</span>
+                            <span>₹{Number(order.total) + Number(order.discount_amount)}</span>
+                          </div>
+                          {order.discount_amount > 0 && (
+                            <div className="flex justify-between text-primary">
+                              <span>Discount{order.coupon_code ? ` (${order.coupon_code})` : ""}</span>
+                              <span>−₹{order.discount_amount}</span>
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-body text-sm text-foreground truncate">{item.product_name}</p>
-                            <p className="font-body text-xs text-muted-foreground">Qty {item.quantity} × ₹{item.price}</p>
+                          <div className="border-t border-border pt-2 flex justify-between font-semibold text-foreground">
+                            <span>{order.payment_method === "cod" ? "Total (Pay on Delivery)" : "Total Paid"}</span>
+                            <span>₹{order.total}</span>
                           </div>
-                          <p className="font-body text-sm font-semibold">₹{item.price * item.quantity}</p>
                         </div>
-                      ))}
-                    </div>
-                    {/* Summary */}
-                    <div className="rounded-lg bg-secondary/50 px-4 py-3 space-y-1 font-body text-sm">
-                      {order.discount_amount > 0 && (
-                        <div className="flex justify-between text-primary">
-                          <span>Discount {order.coupon_code ? `(${order.coupon_code})` : ""}</span>
-                          <span>−₹{order.discount_amount}</span>
+
+                        {/* Tracking + address row */}
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {/* Delivery address */}
+                          <div className="rounded-xl bg-secondary/40 px-4 py-3">
+                            <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Deliver to</p>
+                            <p className="font-body text-sm font-medium text-foreground">{order.shipping_address.full_name}</p>
+                            <p className="font-body text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                              {order.shipping_address.line1}{order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ""},{" "}
+                              {order.shipping_address.city}, {order.shipping_address.state} – {order.shipping_address.pincode}
+                            </p>
+                          </div>
+
+                          {/* Tracking / payment */}
+                          <div className="rounded-xl bg-secondary/40 px-4 py-3">
+                            <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Payment & Shipping</p>
+                            <p className="font-body text-xs text-foreground">{order.payment_method === "cod" ? "Cash on Delivery" : "Paid Online (Razorpay)"}</p>
+                            {order.shiprocket_awb ? (
+                              <div className="mt-2 flex items-center gap-1.5 font-body text-xs">
+                                <Truck size={12} className="text-primary" />
+                                <span className="text-muted-foreground">AWB:</span>
+                                <span className="font-semibold text-foreground">{order.shiprocket_awb}</span>
+                              </div>
+                            ) : (
+                              <p className="mt-1 font-body text-xs text-muted-foreground">Tracking not yet assigned</p>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex justify-between font-semibold">
-                        <span>Total</span><span>₹{order.total}</span>
+
                       </div>
-                      <div className="flex justify-between text-muted-foreground text-xs">
-                        <span>Payment</span>
-                        <span>{order.payment_method === "cod" ? "Cash on Delivery" : "Paid Online"}</span>
-                      </div>
-                      {order.shiprocket_awb && (
-                        <div className="flex justify-between text-muted-foreground text-xs">
-                          <span>Tracking / AWB</span>
-                          <span className="font-semibold text-foreground">{order.shiprocket_awb}</span>
-                        </div>
-                      )}
-                    </div>
-                    {/* Delivery address */}
-                    <div className="font-body text-xs text-muted-foreground">
-                      <span className="font-semibold text-foreground uppercase tracking-wider">Deliver to: </span>
-                      {order.shipping_address.line1}{order.shipping_address.line2 ? `, ${order.shipping_address.line2}` : ""},{" "}
-                      {order.shipping_address.city}, {order.shipping_address.state} – {order.shipping_address.pincode}
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
