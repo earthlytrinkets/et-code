@@ -32,8 +32,15 @@ const FeaturedProducts = () => {
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardWidth = el.firstElementChild?.clientWidth ?? 280;
-    el.scrollBy({ left: dir === "left" ? -(cardWidth + 24) : cardWidth + 24, behavior: "smooth" });
+    const cards = Array.from(el.children) as HTMLElement[];
+    const cur = el.scrollLeft;
+    if (dir === "right") {
+      const next = cards.find((c) => c.offsetLeft > cur + 4);
+      el.scrollTo({ left: next ? next.offsetLeft : el.scrollWidth - el.clientWidth, behavior: "smooth" });
+    } else {
+      const prev = [...cards].reverse().find((c) => c.offsetLeft < cur - 4);
+      el.scrollTo({ left: prev ? prev.offsetLeft : 0, behavior: "smooth" });
+    }
   };
 
   return (
@@ -58,8 +65,8 @@ const FeaturedProducts = () => {
 
         {/* Carousel wrapper — outer div is the positioning root */}
         <div className="relative mt-12">
-          {/* Clip layer — separate from positioning root so overlay siblings escape its stacking context */}
-          <div className="overflow-hidden">
+          {/* Clip layer — overflow-x:clip only clips horizontally, unlike overflow-hidden which clips both axes */}
+          <div className="[overflow-x:clip]">
             {isLoading ? (
               <div className="flex gap-6">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -72,12 +79,14 @@ const FeaturedProducts = () => {
             ) : (
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory overscroll-x-contain [touch-action:pan-x] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
-                {featured.map((product) => (
+                {featured.map((product, index) => (
                   <div
                     key={product.id}
-                    className="w-[calc(50%-36px)] shrink-0 snap-start lg:w-[calc(25%-30px)]"
+                    className={`w-[calc(50%-36px)] shrink-0 lg:w-[calc(25%-30px)] ${
+                      index === featured.length - 1 ? "snap-end" : "snap-start"
+                    }`}
                   >
                     <ProductCard product={product} />
                   </div>
