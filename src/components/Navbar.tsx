@@ -84,7 +84,7 @@ const Navbar = () => {
             ))}
           </nav>
 
-          <div className="flex items-center justify-end gap-2">
+          <div className="col-start-3 flex items-center justify-end gap-2">
             <button
               onClick={toggleTheme}
               className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
