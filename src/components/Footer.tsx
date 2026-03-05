@@ -60,7 +60,7 @@ const Footer = () => (
         </div>
       </div>
 
-      <div className="mt-12 flex items-center justify-between border-t border-border pt-8">
+      <div id="footer-bar" className="mt-12 flex items-center justify-between border-t border-border pt-8">
         <p className="font-body text-xs text-muted-foreground">
           © 2026 Earthly Trinkets. All rights reserved.
         </p>
