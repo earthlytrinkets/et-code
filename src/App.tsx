@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
+import BackToTop from "@/components/BackToTop";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import CheckoutAddress from "./pages/checkout/Address";
@@ -36,6 +37,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
+                <BackToTop />
                 <Routes>
                   {/* Public */}
                   <Route path="/" element={<Index />} />

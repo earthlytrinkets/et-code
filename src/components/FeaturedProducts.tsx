@@ -100,7 +100,7 @@ const FeaturedProducts = () => {
           <button
             onClick={() => scroll("left")}
             aria-label="Scroll left"
-            className={`absolute left-1 top-[37%] z-10 -translate-y-1/2 p-1 text-primary transition-colors hover:text-primary/70 ${
+            className={`absolute left-1 top-[37%] z-10 -translate-y-1/2 rounded-full bg-card/80 p-2 text-primary backdrop-blur-sm ring-1 ring-primary/25 shadow-[0_0_14px_hsl(var(--primary)/0.35)] transition-all hover:ring-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] ${
               canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
@@ -109,7 +109,7 @@ const FeaturedProducts = () => {
           <button
             onClick={() => scroll("right")}
             aria-label="Scroll right"
-            className={`absolute right-1 top-[37%] z-10 -translate-y-1/2 p-1 text-primary transition-colors hover:text-primary/70 ${
+            className={`absolute right-1 top-[37%] z-10 -translate-y-1/2 rounded-full bg-card/80 p-2 text-primary backdrop-blur-sm ring-1 ring-primary/25 shadow-[0_0_14px_hsl(var(--primary)/0.35)] transition-all hover:ring-primary/50 hover:shadow-[0_0_20px_hsl(var(--primary)/0.5)] ${
               canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >

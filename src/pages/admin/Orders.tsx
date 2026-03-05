@@ -511,7 +511,7 @@ export const AdminOrdersSection = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, order_items(*), profiles(full_name, phone)")
+        .select("*, order_items(*)")
         .order("created_at", { ascending: false });
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       const { data, error } = await query;
