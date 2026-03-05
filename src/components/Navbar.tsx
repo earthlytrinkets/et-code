@@ -192,27 +192,72 @@ const Navbar = () => {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden border-t border-border md:hidden"
             >
-              <div className="container mx-auto flex flex-col gap-1 px-4 py-4">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setMobileOpen(false)}
-                    className={`rounded-lg px-4 py-3 font-body text-sm font-medium transition-colors hover:bg-secondary ${
-                      location.pathname === link.to ? "text-primary bg-secondary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                {!user && (
-                  <button
-                    onClick={() => { setAuthOpen(true); setMobileOpen(false); }}
-                    className="mt-2 rounded-lg bg-primary px-4 py-3 font-body text-sm font-semibold text-primary-foreground"
-                  >
-                    Sign In
-                  </button>
-                )}
+              <div className="container mx-auto px-4 py-3">
+                {/* Nav links — compact 2-column grid */}
+                <div className="grid grid-cols-2 gap-1">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={() => setMobileOpen(false)}
+                      className={`rounded-lg px-3 py-2.5 font-body text-sm font-medium transition-colors hover:bg-secondary ${
+                        location.pathname === link.to ? "text-primary bg-secondary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* User section */}
+                <div className="mt-3 border-t border-border pt-3">
+                  {user ? (
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      {(() => {
+                        const avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture;
+                        const name = profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name;
+                        const initials = (name || user.email || "?")[0].toUpperCase();
+                        return avatarUrl ? (
+                          <img src={avatarUrl} alt="avatar" referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 font-display text-sm font-bold text-primary">
+                            {initials}
+                          </div>
+                        );
+                      })()}
+                      {/* Name + email */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-body text-sm font-medium text-foreground truncate">
+                          {profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email || ""}
+                        </p>
+                      </div>
+                      {/* Action icon buttons */}
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileOpen(false)}
+                        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        title="Settings"
+                      >
+                        <Settings size={16} />
+                      </Link>
+                      <button
+                        onClick={async () => { await signOut(); setMobileOpen(false); navigate("/"); }}
+                        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        title="Sign Out"
+                      >
+                        <LogOut size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setAuthOpen(true); setMobileOpen(false); }}
+                      className="w-full rounded-lg bg-primary px-4 py-2.5 font-body text-sm font-semibold text-primary-foreground"
+                    >
+                      Sign In
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.nav>
           )}

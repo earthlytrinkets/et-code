@@ -48,56 +48,81 @@ const FeaturedProducts = () => {
               Featured Pieces
             </h2>
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* Arrow buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => scroll("left")}
-                disabled={!canScrollLeft}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => scroll("right")}
-                disabled={!canScrollRight}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-
-            <Link
-              to="/shop"
-              className="hidden items-center gap-1 font-body text-sm font-medium text-primary transition-colors hover:text-accent md:flex"
-            >
-              View all <ArrowRight size={14} />
-            </Link>
-          </div>
+          <Link
+            to="/shop"
+            className="hidden items-center gap-1 font-body text-sm font-medium text-primary transition-colors hover:text-accent md:flex"
+          >
+            View all <ArrowRight size={14} />
+          </Link>
         </div>
 
-        {isLoading ? (
-          <div className="mt-12 flex gap-6 overflow-hidden">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4] w-[calc(50%-12px)] shrink-0 animate-pulse rounded-2xl bg-secondary lg:w-[calc(25%-18px)]" />
-            ))}
-          </div>
-        ) : (
-          <div
-            ref={scrollRef}
-            className="mt-12 flex gap-6 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {featured.map((product) => (
-              <div
-                key={product.id}
-                className="w-[calc(50%-12px)] shrink-0 lg:w-[calc(25%-18px)]"
-              >
-                <ProductCard product={product} />
+        {/* Carousel wrapper — outer div is the positioning root */}
+        <div className="relative mt-12">
+          {/* Clip layer — separate from positioning root so overlay siblings escape its stacking context */}
+          <div className="overflow-hidden">
+            {isLoading ? (
+              <div className="flex gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-[3/4] w-[calc(50%-36px)] shrink-0 animate-pulse rounded-2xl bg-secondary lg:w-[calc(25%-30px)]"
+                  />
+                ))}
               </div>
-            ))}
+            ) : (
+              <div
+                ref={scrollRef}
+                className="flex gap-6 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {featured.map((product) => (
+                  <div
+                    key={product.id}
+                    className="w-[calc(50%-36px)] shrink-0 lg:w-[calc(25%-30px)]"
+                  >
+                    <ProductCard product={product} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Gradient overlays — siblings of the clip layer, immune to its stacking context */}
+          <div className="pointer-events-none absolute inset-0 z-10 flex">
+            {/* Left fade — only visible when there's content to scroll back to */}
+            <div
+              className={`w-24 shrink-0 bg-gradient-to-r from-background via-background/60 to-transparent transition-opacity duration-300 ${
+                canScrollLeft ? "opacity-100" : "opacity-0"
+              }`}
+            />
+            <div className="flex-1" />
+            {/* Right fade — only visible when there's content to scroll forward to */}
+            <div
+              className={`w-24 shrink-0 bg-gradient-to-l from-background via-background/60 to-transparent transition-opacity duration-300 ${
+                canScrollRight ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          </div>
+
+          {/* Arrow buttons — z-20 so they sit above the gradient overlay */}
+          <button
+            onClick={() => scroll("left")}
+            aria-label="Scroll left"
+            className={`absolute left-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-300 hover:text-primary/70 ${
+              canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <ChevronLeft size={30} strokeWidth={2} />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            aria-label="Scroll right"
+            className={`absolute right-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-300 hover:text-primary/70 ${
+              canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <ChevronRight size={30} strokeWidth={2} />
+          </button>
+        </div>
 
         <div className="mt-8 text-center md:hidden">
           <Link
