@@ -72,12 +72,12 @@ const FeaturedProducts = () => {
             ) : (
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
                 {featured.map((product) => (
                   <div
                     key={product.id}
-                    className="w-[calc(50%-36px)] shrink-0 lg:w-[calc(25%-30px)]"
+                    className="w-[calc(50%-36px)] shrink-0 snap-start lg:w-[calc(25%-30px)]"
                   >
                     <ProductCard product={product} />
                   </div>
