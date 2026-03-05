@@ -99,14 +99,14 @@ const FeaturedProducts = () => {
           <div className="pointer-events-none absolute inset-0 z-10 flex">
             {/* Left fade — only visible when there's content to scroll back to */}
             <div
-              className={`w-24 shrink-0 bg-gradient-to-r from-background via-background/60 to-transparent ${
+              className={`w-24 shrink-0 bg-gradient-to-r from-background via-background/60 to-transparent transition-opacity duration-300 ${
                 canScrollLeft ? "opacity-100" : "opacity-0"
               }`}
             />
             <div className="flex-1" />
             {/* Right fade — only visible when there's content to scroll forward to */}
             <div
-              className={`w-24 shrink-0 bg-gradient-to-l from-background via-background/60 to-transparent ${
+              className={`w-24 shrink-0 bg-gradient-to-l from-background via-background/60 to-transparent transition-opacity duration-300 ${
                 canScrollRight ? "opacity-100" : "opacity-0"
               }`}
             />
