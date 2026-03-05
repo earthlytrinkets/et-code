@@ -90,14 +90,14 @@ const FeaturedProducts = () => {
           <div className="pointer-events-none absolute inset-0 z-10 flex">
             {/* Left fade — only visible when there's content to scroll back to */}
             <div
-              className={`w-24 shrink-0 bg-gradient-to-r from-background via-background/60 to-transparent transition-opacity duration-300 ${
+              className={`w-24 shrink-0 bg-gradient-to-r from-background via-background/60 to-transparent transition-opacity duration-100 ${
                 canScrollLeft ? "opacity-100" : "opacity-0"
               }`}
             />
             <div className="flex-1" />
             {/* Right fade — only visible when there's content to scroll forward to */}
             <div
-              className={`w-24 shrink-0 bg-gradient-to-l from-background via-background/60 to-transparent transition-opacity duration-300 ${
+              className={`w-24 shrink-0 bg-gradient-to-l from-background via-background/60 to-transparent transition-opacity duration-100 ${
                 canScrollRight ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -107,7 +107,7 @@ const FeaturedProducts = () => {
           <button
             onClick={() => scroll("left")}
             aria-label="Scroll left"
-            className={`absolute left-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-300 hover:text-primary/70 ${
+            className={`absolute left-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-100 hover:text-primary/70 ${
               canScrollLeft ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
@@ -116,7 +116,7 @@ const FeaturedProducts = () => {
           <button
             onClick={() => scroll("right")}
             aria-label="Scroll right"
-            className={`absolute right-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-300 hover:text-primary/70 ${
+            className={`absolute right-1 top-[37%] z-20 -translate-y-1/2 p-1 text-primary transition-all duration-100 hover:text-primary/70 ${
               canScrollRight ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
