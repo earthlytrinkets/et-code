@@ -20,11 +20,12 @@ const FeaturedProducts = () => {
   useEffect(() => {
     const raf = requestAnimationFrame(checkScroll);
     const el = scrollRef.current;
-    el?.addEventListener("scroll", checkScroll, { passive: true });
+    // scrollend fires once after scroll fully settles — avoids flicker from mid-animation state updates
+    el?.addEventListener("scrollend", checkScroll, { passive: true });
     window.addEventListener("resize", checkScroll);
     return () => {
       cancelAnimationFrame(raf);
-      el?.removeEventListener("scroll", checkScroll);
+      el?.removeEventListener("scrollend", checkScroll);
       window.removeEventListener("resize", checkScroll);
     };
   }, [featured]);
