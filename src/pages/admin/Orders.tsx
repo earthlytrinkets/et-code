@@ -326,7 +326,7 @@ const OrderRow = ({ order }: { order: Order }) => {
               </div>
 
               {shipMode === "personal" ? (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     value={trackingInput}
                     onChange={(e) => setTrackingInput(e.target.value)}
@@ -336,7 +336,7 @@ const OrderRow = ({ order }: { order: Order }) => {
                   <button
                     onClick={handlePersonalShip}
                     disabled={!trackingInput.trim() || updateOrder.isPending}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-body text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-body text-xs font-semibold text-primary-foreground disabled:opacity-50 shrink-0"
                   >
                     <Send size={12} /> Mark Shipped
                   </button>
