@@ -41,9 +41,14 @@ const AuthModal = ({ open, onClose }: AuthModalProps) => {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    const signedOut = localStorage.getItem("et_signed_out") === "true";
+    if (signedOut) localStorage.removeItem("et_signed_out");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin },
+      options: {
+        redirectTo: window.location.origin,
+        ...(signedOut && { queryParams: { prompt: "select_account" } }),
+      },
     });
     if (error) toast.error(error.message);
     setLoading(false);

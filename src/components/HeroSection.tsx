@@ -3,8 +3,11 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import GracefulImage from "@/components/GracefulImage";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-const HeroSection = () => (
+const HeroSection = () => {
+  const { isAdmin, roleChecked } = useIsAdmin();
+  return (
   <section className="relative overflow-hidden">
     <div className="container mx-auto px-4 lg:px-8">
       <div className="grid min-h-[85vh] items-center gap-8 lg:grid-cols-2">
@@ -35,12 +38,14 @@ const HeroSection = () => (
               Explore Collection
               <ArrowRight size={16} />
             </Link>
-            <Link
-              to="/custom-orders"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 font-body text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-            >
-              Custom Orders
-            </Link>
+            {!(roleChecked && isAdmin) && (
+              <Link
+                to="/custom-orders"
+                className="inline-flex items-center gap-2 rounded-full border border-border px-8 py-3.5 font-body text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+              >
+                Custom Orders
+              </Link>
+            )}
           </div>
         </motion.div>
 
@@ -65,6 +70,7 @@ const HeroSection = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default HeroSection;
