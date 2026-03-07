@@ -29,6 +29,7 @@ type ProductForm = {
   is_active: boolean;
   is_featured: boolean;
   is_new: boolean;
+  is_coming_soon: boolean;
   images: string[];         // existing URLs
 };
 
@@ -36,7 +37,7 @@ const EMPTY_FORM: ProductForm = {
   name: "", slug: "", short_description: "", description: "",
   price: "", compare_at_price: "", category_id: "", stock: "0",
   materials: "", care_instructions: "", tags: "",
-  is_active: true, is_featured: false, is_new: false, images: [],
+  is_active: true, is_featured: false, is_new: false, is_coming_soon: false, images: [],
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -154,6 +155,7 @@ const ProductFormModal = ({
           is_active: initial.is_active,
           is_featured: initial.is_featured,
           is_new: initial.is_new,
+          is_coming_soon: initial.is_coming_soon,
           images: initial.images,
         }
       : EMPTY_FORM
@@ -179,6 +181,7 @@ const ProductFormModal = ({
         is_active: form.is_active,
         is_featured: form.is_featured,
         is_new: form.is_new,
+        is_coming_soon: form.is_coming_soon,
         images: form.images,
       };
 
@@ -303,11 +306,12 @@ const ProductFormModal = ({
           </div>
 
           {/* Toggles */}
-          <div className="flex gap-6 pt-2">
+          <div className="flex flex-wrap gap-5 pt-2">
             {([
-              { key: "is_active", label: "Active (visible in shop)" },
-              { key: "is_featured", label: "Featured (on homepage)" },
-              { key: "is_new", label: "Mark as New" },
+              { key: "is_active",      label: "Active (visible in shop)" },
+              { key: "is_featured",    label: "Featured (on homepage)" },
+              { key: "is_new",         label: "Mark as New" },
+              { key: "is_coming_soon", label: "Coming Soon (greyed out, not purchasable)" },
             ] as const).map(({ key, label }) => (
               <label key={key} className="flex cursor-pointer items-center gap-2">
                 <input
@@ -417,7 +421,16 @@ export const AdminProductsSection = () => {
                       <span className="ml-1 text-xs text-muted-foreground line-through">₹{p.compare_at_price}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-body text-foreground">{p.stock}</td>
+                  <td className="px-4 py-3 font-body text-foreground">
+                    <div className="flex items-center gap-2">
+                      <span>{p.stock}</span>
+                      {p.is_coming_soon ? (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Coming Soon</span>
+                      ) : p.stock === 0 ? (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">Out of Stock</span>
+                      ) : null}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button

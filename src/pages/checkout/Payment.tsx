@@ -118,6 +118,17 @@ const CheckoutPayment = () => {
     if (error) console.error("order_items insert failed:", error.message);
   };
 
+  const decrementStock = async () => {
+    await Promise.all(
+      items.map((item) =>
+        (supabase as any).rpc("decrement_product_stock", {
+          p_product_id: item.product.id,
+          p_quantity: item.quantity,
+        })
+      )
+    );
+  };
+
   const handleCOD = async () => {
     setPlacing(true);
     setError("");
@@ -128,6 +139,7 @@ const CheckoutPayment = () => {
       .single();
     if (err || !data) { setError("Failed to place order. Please try again."); setPlacing(false); return; }
     await createOrderItems(data.id);
+    await decrementStock();
     clearCart();
     clearCheckout();
     navigate(`/checkout/success?orderId=${data.id}`);
@@ -165,6 +177,7 @@ const CheckoutPayment = () => {
           .from("orders")
           .update({ status: "confirmed", razorpay_payment_id: response.razorpay_payment_id })
           .eq("id", order.id);
+        await decrementStock();
         clearCart();
         clearCheckout();
         navigate(`/checkout/success?orderId=${order.id}`);

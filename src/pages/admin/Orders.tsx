@@ -66,6 +66,28 @@ const STATUS_META: Record<OrderStatus, { label: string; color: string }> = {
   refunded:         { label: "Refunded",         color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
 };
 
+// ─── Status patch logic ───────────────────────────────────────────────────────
+
+// Statuses where it makes no sense to have a tracking/shipping record
+const PRE_SHIPPING: OrderStatus[] = ["pending", "confirmed", "processing"];
+
+/**
+ * Builds the DB patch for a status change.
+ * Clears shipping fields when moving back to a pre-shipping status.
+ */
+function buildStatusPatch(newStatus: OrderStatus): Partial<Order> {
+  const base: Partial<Order> = { status: newStatus };
+  if (PRE_SHIPPING.includes(newStatus)) {
+    return {
+      ...base,
+      shipping_method: null,
+      shiprocket_awb: null,
+      shiprocket_order_id: null,
+    };
+  }
+  return base;
+}
+
 // ─── Email helper ─────────────────────────────────────────────────────────────
 
 const STATUS_EMAIL_EVENT: Partial<Record<OrderStatus, string>> = {
@@ -395,12 +417,12 @@ const OrderRow = ({ order }: { order: Order }) => {
           {/* Status transitions */}
           <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
             <span className="font-body text-sm text-muted-foreground">Move to:</span>
-            {(["confirmed", "processing", "shipped", "out_for_delivery", "delivered", "cancelled", "refunded"] as OrderStatus[])
+            {(["confirmed", "processing", "out_for_delivery", "delivered", "cancelled", "refunded"] as OrderStatus[])
               .filter((s) => s !== order.status)
               .map((s) => (
                 <button
                   key={s}
-                  onClick={() => updateOrder.mutate({ status: s } as never)}
+                  onClick={() => updateOrder.mutate(buildStatusPatch(s) as never)}
                   disabled={updateOrder.isPending}
                   className={`rounded-full px-3 py-1.5 font-body text-xs font-medium transition-colors disabled:opacity-50 ${STATUS_META[s].color} hover:opacity-80`}
                 >

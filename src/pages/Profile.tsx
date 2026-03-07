@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -560,6 +561,99 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   delivered: "Delivered", cancelled: "Cancelled", refunded: "Refunded",
 };
 
+// ─── Delivery Progress Bar ────────────────────────────────────────────────────
+
+const DELIVERY_STEPS = [
+  { key: "pending",          label: "Ordered"    },
+  { key: "confirmed",        label: "Confirmed"  },
+  { key: "processing",       label: "Processing" },
+  { key: "shipped",          label: "Shipped"    },
+  { key: "out_for_delivery", label: "On the Way" },
+  { key: "delivered",        label: "Delivered"  },
+];
+
+const DeliveryProgress = ({ status }: { status: string }) => {
+  if (status === "cancelled" || status === "refunded") {
+    return (
+      <div className={`rounded-xl px-4 py-3 text-center ${
+        status === "cancelled"
+          ? "bg-red-50 dark:bg-red-900/20"
+          : "bg-gray-100 dark:bg-gray-800/40"
+      }`}>
+        <p className={`font-body text-sm font-semibold ${
+          status === "cancelled"
+            ? "text-red-700 dark:text-red-400"
+            : "text-gray-600 dark:text-gray-400"
+        }`}>
+          {status === "cancelled" ? "Order Cancelled" : "Order Refunded"}
+        </p>
+      </div>
+    );
+  }
+
+  const currentIdx = DELIVERY_STEPS.findIndex((s) => s.key === status);
+
+  return (
+    <div className="rounded-xl bg-secondary/40 px-4 py-5">
+      <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+        Delivery Progress
+      </p>
+      <div className="relative flex items-start justify-between">
+        {/* Background track */}
+        <div className="absolute top-3.5 left-[16px] right-[16px] h-0.5 bg-border" />
+        {/* Filled track */}
+        <div
+          className="absolute top-3.5 left-[16px] h-0.5 bg-primary transition-all duration-700 ease-out"
+          style={{
+            width: currentIdx <= 0
+              ? "0%"
+              : `calc(${(currentIdx / (DELIVERY_STEPS.length - 1)) * 100}% - 32px)`,
+          }}
+        />
+
+        {DELIVERY_STEPS.map((step, idx) => {
+          const isDone = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          return (
+            <div key={step.key} className="relative z-10 flex flex-col items-center gap-2" style={{ flex: 1 }}>
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                  isDone
+                    ? "border-primary bg-primary"
+                    : isCurrent
+                    ? "border-primary bg-background"
+                    : "border-border bg-background"
+                }`}
+              >
+                {isDone ? (
+                  <Check size={12} className="text-primary-foreground" />
+                ) : isCurrent ? (
+                  <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                ) : (
+                  <div className="h-1.5 w-1.5 rounded-full bg-border" />
+                )}
+              </div>
+              <p
+                className={`font-body text-center leading-tight ${
+                  isCurrent
+                    ? "text-[10px] font-bold text-primary"
+                    : isDone
+                    ? "text-[9px] text-muted-foreground"
+                    : "text-[9px] text-muted-foreground/40"
+                }`}
+              >
+                {step.label}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─── Orders Section ───────────────────────────────────────────────────────────
+
 const OrdersSection = ({ userId }: { userId: string }) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -643,6 +737,9 @@ const OrdersSection = ({ userId }: { userId: string }) => {
                       className="overflow-hidden"
                     >
                       <div className="border-t border-border px-5 py-5 space-y-5">
+
+                        {/* Delivery progress */}
+                        <DeliveryProgress status={order.status} />
 
                         {/* Items — larger cards */}
                         <div>
@@ -746,18 +843,7 @@ const ProfilePage = () => {
   const [activeSection, setActiveSection] = useState<Section>("profile");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => setIsAdmin(!!data));
-  }, [user]);
+  const { isAdmin } = useIsAdmin();
 
   const handleAvatarUpload = async (file: File) => {
     if (!user) return;

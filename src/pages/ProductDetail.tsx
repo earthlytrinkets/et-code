@@ -106,10 +106,12 @@ const ProductDetail = () => {
             {!(roleChecked && isAdmin) && (
               <button
                 onClick={handleAdd}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || product.is_coming_soon}
                 className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50 md:w-auto"
               >
-                {product.stock === 0
+                {product.is_coming_soon
+                  ? "Coming Soon"
+                  : product.stock === 0
                   ? "Out of Stock"
                   : added
                   ? <><Check size={16} /> Added to Cart</>

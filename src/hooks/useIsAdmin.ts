@@ -11,7 +11,7 @@ const CURRENT_UID_KEY = "et_current_uid";
  * `roleChecked` is true once the status is confirmed (either from cache or DB).
  */
 export const useIsAdmin = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const [isAdmin, setIsAdmin] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -28,6 +28,9 @@ export const useIsAdmin = () => {
   });
 
   useEffect(() => {
+    // Auth still resolving — preserve the cached state, don't flash
+    if (loading) return;
+
     if (!user) {
       localStorage.removeItem(CURRENT_UID_KEY);
       setIsAdmin(false);
@@ -49,7 +52,7 @@ export const useIsAdmin = () => {
         setRoleChecked(true);
         localStorage.setItem(`${ADMIN_PREFIX}${user.id}`, String(admin));
       });
-  }, [user?.id]);
+  }, [user?.id, loading]);
 
   return { isAdmin, roleChecked };
 };

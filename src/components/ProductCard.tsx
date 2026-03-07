@@ -12,6 +12,9 @@ const ProductCard = ({ product }: { product: Product }) => {
 
   const imageUrl = product.images[0] ?? "";
   const categoryLabel = product.categories?.name ?? "";
+  const isOutOfStock = product.stock === 0 && !product.is_coming_soon;
+  const isComingSoon = product.is_coming_soon;
+  const isUnavailable = isOutOfStock || isComingSoon;
 
   return (
     <motion.div
@@ -22,24 +25,32 @@ const ProductCard = ({ product }: { product: Product }) => {
       className="group"
     >
       <Link to={`/product/${product.slug}`} className="block">
-        <div className="relative overflow-hidden rounded-lg bg-secondary">
+        <div className={`relative overflow-hidden rounded-lg bg-secondary ${isUnavailable ? "opacity-60" : ""}`}>
           <GracefulImage
             src={imageUrl}
             alt={product.name}
             className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-          {product.is_new && (
+          {/* Availability overlay */}
+          {isUnavailable && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <span className="rounded-full bg-black/70 px-3 py-1.5 font-body text-[11px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+                {isComingSoon ? "Coming Soon" : "Out of Stock"}
+              </span>
+            </div>
+          )}
+          {!isUnavailable && product.is_new && (
             <span className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 font-body text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
               New
             </span>
           )}
-          {product.compare_at_price && (
+          {!isUnavailable && product.compare_at_price && (
             <span className="absolute right-3 top-3 rounded-full bg-accent px-3 py-1 font-body text-[10px] font-semibold uppercase tracking-wider text-accent-foreground">
               Sale
             </span>
           )}
-          {!(roleChecked && isAdmin) && (
+          {!(roleChecked && isAdmin) && !isUnavailable && (
             <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <button
                 onClick={(e) => {
