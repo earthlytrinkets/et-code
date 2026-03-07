@@ -66,6 +66,21 @@ const STATUS_META: Record<OrderStatus, { label: string; color: string }> = {
   refunded:         { label: "Refunded",         color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
 };
 
+// ─── Email helper ─────────────────────────────────────────────────────────────
+
+const STATUS_EMAIL_EVENT: Partial<Record<OrderStatus, string>> = {
+  confirmed:        "order_confirmed",
+  shipped:          "order_shipped",
+  out_for_delivery: "order_out_for_delivery",
+  delivered:        "order_delivered",
+};
+
+const sendStatusEmail = (orderId: string, status: OrderStatus) => {
+  const event = STATUS_EMAIL_EVENT[status];
+  if (!event) return;
+  supabase.functions.invoke("send-order-email", { body: { event, orderId } }).catch(console.error);
+};
+
 // ─── Shiprocket helpers ───────────────────────────────────────────────────────
 
 const SR_TOKEN_KEY = "et_shiprocket_token";
@@ -93,9 +108,11 @@ const OrderRow = ({ order }: { order: Order }) => {
       const { error } = await supabase.from("orders").update(patch as never).eq("id", order.id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, patch) => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
       toast.success("Order updated");
+      const newStatus = (patch as Partial<Order>).status;
+      if (newStatus) sendStatusEmail(order.id, newStatus);
     },
     onError: () => toast.error("Failed to update order"),
   });

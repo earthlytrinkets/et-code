@@ -29,6 +29,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (!existing) {
       await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
+      // Send welcome email for new Google OAuth sign-ups
+      if (user.email) {
+        supabase.functions.invoke("send-order-email", {
+          body: { event: "welcome", email: user.email, name: name ?? "" },
+        }).catch(console.error);
+      }
     } else {
       // Only fill fields the user hasn't already customised
       const updates: Record<string, string | undefined> = {};
