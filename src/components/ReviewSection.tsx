@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Star, Trash2, Loader2, MessageSquare, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useReviews, useMyReview, useSubmitReview, useDeleteReview } from "@/hooks/useReviews";
 import AuthModal from "@/components/AuthModal";
 
@@ -51,6 +52,7 @@ const Stars = ({ rating, size = 14 }: { rating: number; size?: number }) => (
 
 const ReviewSection = ({ productId }: { productId: string }) => {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { data: reviews = [], isLoading } = useReviews(productId);
   const { data: myReview } = useMyReview(productId, user?.id);
   const submitReview = useSubmitReview(productId);
@@ -111,7 +113,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
             </div>
           )}
         </div>
-        {user && myReview && !editing && (
+        {user && !isAdmin && myReview && !editing && (
           <button
             onClick={startEdit}
             className="font-body text-xs text-primary hover:underline"
@@ -122,7 +124,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
       </div>
 
       {/* Write / edit review form */}
-      {user ? (
+      {user && !isAdmin ? (
         !myReview || editing ? (
           <form
             onSubmit={handleSubmit}
