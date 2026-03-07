@@ -2,17 +2,12 @@
 -- Earthly Trinkets — Full Database Schema
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor → New query)
 --
--- PREREQUISITES (created automatically by Supabase on project creation):
---   • auth.users              — Supabase built-in auth table
---   • public.profiles         — created by the default Lovable migration
---   • public.user_roles       — created by the default Lovable migration
---   • public.app_role enum    — 'admin' | 'user'
---   • public.has_role()       — checks if a user has a given role
---   • public.update_updated_at_column() — sets updated_at = now() on UPDATE
---   • public.handle_new_user() trigger  — auto-creates a profiles row on signup
---
--- Run order: this single file is self-contained. Execute it once.
--- After this: run 02_storage.sql, then 03_admin_setup.sql.
+-- Run order:
+--   1. 00_prerequisites.sql  — profiles, user_roles, has_role(), triggers
+--                              (skip if already applied via Supabase CLI / Lovable)
+--   2. 01_schema.sql         — this file (all product/order/review tables)
+--   3. 02_storage.sql        — storage buckets + policies
+--   4. 03_admin_setup.sql    — grant admin role to a specific user
 -- ══════════════════════════════════════════════════════════════════════════════
 
 

@@ -3,6 +3,7 @@ import { Star, Trash2, Loader2, MessageSquare, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReviews, useMyReview, useSubmitReview, useDeleteReview } from "@/hooks/useReviews";
+import AuthModal from "@/components/AuthModal";
 
 // ─── Star picker ──────────────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ const ReviewSection = ({ productId }: { productId: string }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [editing, setEditing] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   const startEdit = () => {
     setRating(myReview?.rating ?? 0);
@@ -159,9 +161,18 @@ const ReviewSection = ({ productId }: { productId: string }) => {
           </form>
         ) : null
       ) : (
-        <p className="mb-8 font-body text-sm text-muted-foreground">
-          <span className="text-primary font-medium cursor-pointer">Sign in</span> to leave a review.
-        </p>
+        <>
+          <p className="mb-8 font-body text-sm text-muted-foreground">
+            <button
+              onClick={() => setAuthOpen(true)}
+              className="text-primary font-medium hover:underline underline-offset-2"
+            >
+              Sign in
+            </button>
+            {" "}to leave a review.
+          </p>
+          <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+        </>
       )}
 
       {/* Review list */}
