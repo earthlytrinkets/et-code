@@ -10,6 +10,22 @@ import { ArrowRight, CreditCard, Truck, ShieldCheck, MapPin, Check, Tag } from "
 import GracefulImage from "@/components/GracefulImage";
 import { motion } from "framer-motion";
 
+// ─── API helper ───────────────────────────────────────────────────────────────
+// Gets the logged-in user's JWT from Supabase and sends it in the Authorization
+// header so the server can verify who is making the request.
+const apiPost = async (endpoint: string, body: object): Promise<Record<string, unknown>> => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token ?? "";
+  const res = await fetch(`/api${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error((json as { error?: string }).error ?? "Request failed");
+  return json as Record<string, unknown>;
+};
+
 declare global {
   interface Window {
     Razorpay: new (options: Record<string, unknown>) => { open: () => void };
@@ -84,17 +100,16 @@ const CheckoutPayment = () => {
     if (!selectedAddress || items.length === 0) navigate("/checkout/address");
   }, [selectedAddress, items, navigate]);
 
-  const buildOrderPayload = (paymentMethod: "cod" | "razorpay", razorpayPaymentId?: string) => ({
-    user_id: user!.id,
-    status: "confirmed",
-    subtotal: totalPrice,
-    discount_amount: discountAmount,
-    coupon_code: appliedCoupon?.code ?? null,
-    shipping_fee: 0,
-    total: finalTotal,
-    payment_method: paymentMethod,
-    razorpay_payment_id: razorpayPaymentId ?? null,
-    shipping_address: {
+  // Shared cart data sent to every order endpoint
+  const orderPayload = {
+    items: items.map((item) => ({
+      productId: item.product.id,
+      productName: item.product.name,
+      productImage: item.product.images[0] ?? null,
+      price: item.product.price,
+      quantity: item.quantity,
+    })),
+    selectedAddress: {
       full_name: selectedAddress!.full_name,
       phone: selectedAddress!.phone,
       line1: selectedAddress!.line1,
@@ -103,46 +118,24 @@ const CheckoutPayment = () => {
       state: selectedAddress!.state,
       pincode: selectedAddress!.pincode,
     },
-  });
-
-  const createOrderItems = async (orderId: string) => {
-    const orderItems = items.map((item) => ({
-      order_id: orderId,
-      product_id: item.product.id,
-      product_name: item.product.name,
-      product_image: item.product.images[0] ?? null,
-      price: item.product.price,
-      quantity: item.quantity,
-    }));
-    const { error } = await (supabase.from("order_items" as never) as any).insert(orderItems);
-    if (error) console.error("order_items insert failed:", error.message);
-  };
-
-  const decrementStock = async () => {
-    await Promise.all(
-      items.map((item) =>
-        (supabase as any).rpc("decrement_product_stock", {
-          p_product_id: item.product.id,
-          p_quantity: item.quantity,
-        })
-      )
-    );
+    couponCode: appliedCoupon?.code ?? null,
+    subtotal: totalPrice,
+    discountAmount,
+    total: finalTotal,
   };
 
   const handleCOD = async () => {
     setPlacing(true);
     setError("");
-    const { data, error: err } = await supabase
-      .from("orders")
-      .insert(buildOrderPayload("cod"))
-      .select("id")
-      .single();
-    if (err || !data) { setError("Failed to place order. Please try again."); setPlacing(false); return; }
-    await createOrderItems(data.id);
-    await decrementStock();
-    clearCart();
-    clearCheckout();
-    navigate(`/checkout/success?orderId=${data.id}`);
+    try {
+      const { orderId } = await apiPost("/orders/cod", orderPayload);
+      clearCart();
+      clearCheckout();
+      navigate(`/checkout/success?orderId=${orderId}`);
+    } catch (e: unknown) {
+      setError((e as Error).message || "Failed to place order. Please try again.");
+      setPlacing(false);
+    }
   };
 
   const handleRazorpay = async () => {
@@ -151,47 +144,60 @@ const CheckoutPayment = () => {
     const loaded = await loadRazorpayScript();
     if (!loaded) { setError("Failed to load payment gateway."); setPlacing(false); return; }
 
-    const { data: order, error: orderErr } = await supabase
-      .from("orders")
-      .insert({ ...buildOrderPayload("razorpay"), status: "pending" })
-      .select("id")
-      .single();
-    if (orderErr || !order) { setError("Failed to initiate payment."); setPlacing(false); return; }
-    await createOrderItems(order.id);
+    try {
+      // Step 1: Server creates a Razorpay order and a pending DB record
+      const { orderId, razorpayOrderId, amount, currency } =
+        await apiPost("/orders/razorpay/initiate", orderPayload);
 
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: Math.round(finalTotal * 100),
-      currency: "INR",
-      name: "Earthly Trinkets",
-      description: `Order #${order.id.slice(0, 8).toUpperCase()}`,
-      image: "/logo.png",
-      prefill: {
-        name: selectedAddress!.full_name,
-        contact: selectedAddress!.phone,
-        email: user!.email ?? "",
-      },
-      theme: { color: "#7c5c3e" },
-      handler: async (response: { razorpay_payment_id: string }) => {
-        await supabase
-          .from("orders")
-          .update({ status: "confirmed", razorpay_payment_id: response.razorpay_payment_id })
-          .eq("id", order.id);
-        await decrementStock();
-        clearCart();
-        clearCheckout();
-        navigate(`/checkout/success?orderId=${order.id}`);
-      },
-      modal: {
-        ondismiss: async () => {
-          await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
-          setPlacing(false);
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount,    // server-returned paise value — can't be tampered by client
+        currency,
+        name: "Earthly Trinkets",
+        description: `Order #${(orderId as string).slice(0, 8).toUpperCase()}`,
+        image: "/logo.png",
+        order_id: razorpayOrderId, // required for signature verification
+        prefill: {
+          name: selectedAddress!.full_name,
+          contact: selectedAddress!.phone,
+          email: user!.email ?? "",
         },
-      },
-    };
+        theme: { color: "#7c5c3e" },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            // Step 2: Server verifies HMAC signature (KEY_SECRET stays server-side)
+            await apiPost("/orders/razorpay/verify", {
+              orderId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+            clearCart();
+            clearCheckout();
+            navigate(`/checkout/success?orderId=${orderId}`);
+          } catch {
+            setError("Payment verification failed. Please contact support.");
+            setPlacing(false);
+          }
+        },
+        modal: {
+          ondismiss: async () => {
+            await apiPost("/orders/razorpay/cancel", { orderId }).catch(() => {});
+            setPlacing(false);
+          },
+        },
+      };
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (e: unknown) {
+      setError((e as Error).message || "Failed to initiate payment.");
+      setPlacing(false);
+    }
   };
 
   if (!selectedAddress || items.length === 0) return null;
