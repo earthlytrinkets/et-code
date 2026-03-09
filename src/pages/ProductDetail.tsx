@@ -6,24 +6,19 @@ import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewSection from "@/components/ReviewSection";
-import { ShoppingBag, Star, ArrowLeft, Check } from "lucide-react";
+import { ShoppingBag, Star, ArrowLeft, Plus, Minus } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
-  const { addToCart } = useCart();
+  const { items, addToCart, updateQuantity } = useCart();
   const { isAdmin, roleChecked } = useIsAdmin();
-  const [added, setAdded] = useState(false);
 
-  const handleAdd = () => {
-    if (!product) return;
-    addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+  const cartItem = product ? items.find((i) => i.product.id === product.id) : undefined;
+  const qty = cartItem?.quantity ?? 0;
 
   if (isLoading) {
     return (
@@ -104,19 +99,37 @@ const ProductDetail = () => {
             )}
 
             {!(roleChecked && isAdmin) && (
-              <button
-                onClick={handleAdd}
-                disabled={product.stock === 0 || product.is_coming_soon}
-                className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50 md:w-auto"
-              >
-                {product.is_coming_soon
-                  ? "Coming Soon"
-                  : product.stock === 0
-                  ? "Out of Stock"
-                  : added
-                  ? <><Check size={16} /> Added to Cart</>
-                  : <><ShoppingBag size={16} /> Add to Cart</>}
-              </button>
+              <div className="mt-8">
+                {product.is_coming_soon || product.stock === 0 ? (
+                  <button disabled className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground opacity-50 md:w-auto">
+                    {product.is_coming_soon ? "Coming Soon" : "Out of Stock"}
+                  </button>
+                ) : qty === 0 ? (
+                  <button
+                    onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow md:w-auto"
+                  >
+                    <ShoppingBag size={16} /> Add to Cart
+                  </button>
+                ) : (
+                  /* ── Quantity controls ── */
+                  <div className="inline-flex items-center rounded-full border border-border bg-card shadow-soft">
+                    <button
+                      onClick={() => updateQuantity(product.id, qty - 1)}
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <span className="min-w-[48px] text-center font-display text-base font-bold text-foreground">{qty}</span>
+                    <button
+                      onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {(product.materials.length > 0 || product.care_instructions.length > 0) && (

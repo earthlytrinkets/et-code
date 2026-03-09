@@ -2,13 +2,16 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { ShoppingBag, Star } from "lucide-react";
+import { ShoppingBag, Plus, Minus, Star } from "lucide-react";
 import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { addToCart } = useCart();
+  const { items, addToCart, updateQuantity } = useCart();
   const { isAdmin, roleChecked } = useIsAdmin();
+
+  const cartItem = items.find((i) => i.product.id === product.id);
+  const qty = cartItem?.quantity ?? 0;
 
   const imageUrl = product.images[0] ?? "";
   const categoryLabel = product.categories?.name ?? "";
@@ -51,16 +54,36 @@ const ProductCard = ({ product }: { product: Product }) => {
             </span>
           )}
           {!(roleChecked && isAdmin) && !isUnavailable && (
-            <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
-                }}
-                className="rounded-full bg-card p-2.5 shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-              >
-                <ShoppingBag size={14} />
-              </button>
+            <div className="absolute bottom-2 right-2">
+              {qty === 0 ? (
+                /* ── Small cart icon ── */
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                  }}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
+                >
+                  <ShoppingBag size={14} />
+                </button>
+              ) : (
+                /* ── Quantity controls ── */
+                <div className="flex items-center gap-0.5 rounded-full bg-card/90 backdrop-blur-sm px-1 py-1 shadow-soft">
+                  <button
+                    onClick={(e) => { e.preventDefault(); updateQuantity(product.id, qty - 1); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
+                  >
+                    <Minus size={11} />
+                  </button>
+                  <span className="font-body text-xs font-bold text-foreground min-w-[16px] text-center">{qty}</span>
+                  <button
+                    onClick={(e) => { e.preventDefault(); addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock }); }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
+                  >
+                    <Plus size={11} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
