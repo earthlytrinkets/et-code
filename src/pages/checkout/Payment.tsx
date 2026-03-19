@@ -202,6 +202,7 @@ const CheckoutPayment = () => {
               items: items.map((i) => ({
                 product_id: i.product.id,
                 name:       i.product.name,
+                image:      i.product.images[0] ?? null,
                 price:      i.product.price,
                 quantity:   i.quantity,
               })),
