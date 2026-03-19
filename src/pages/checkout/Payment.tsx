@@ -74,7 +74,7 @@ const CheckoutPayment = () => {
   const { selectedAddress, appliedCoupon, discountAmount, clearCheckout } = useCheckout();
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
-  const [method, setMethod] = useState<"cod" | "razorpay">("cod");
+  const [method, setMethod] = useState<"cod" | "razorpay">("razorpay");
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
 
@@ -249,16 +249,16 @@ const CheckoutPayment = () => {
             <div className="space-y-3">
               {[
                 {
-                  id: "cod" as const,
-                  title: "Cash on Delivery",
-                  description: "Pay in cash when your order arrives",
-                  badge: null,
-                },
-                {
                   id: "razorpay" as const,
                   title: "Pay Online",
                   description: "UPI, cards, net banking & wallets",
                   badge: "Recommended",
+                },
+                {
+                  id: "cod" as const,
+                  title: "Cash on Delivery",
+                  description: "Pay in cash when your order arrives",
+                  badge: null,
                 },
               ].map(({ id, title, description, badge }) => {
                 const isSelected = method === id;
