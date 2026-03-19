@@ -148,23 +148,35 @@ const CheckoutPayment = () => {
   const handleRazorpay = async () => {
     setPlacing(true);
     setError("");
+
     const loaded = await loadRazorpayScript();
     if (!loaded) { setError("Failed to load payment gateway."); setPlacing(false); return; }
 
-    const { data: order, error: orderErr } = await supabase
-      .from("orders")
-      .insert({ ...buildOrderPayload("razorpay"), status: "pending" })
-      .select("id")
-      .single();
-    if (orderErr || !order) { setError("Failed to initiate payment."); setPlacing(false); return; }
-    await createOrderItems(order.id);
+    // 1. Create Razorpay order via serverless function
+    let razorpayOrderId: string;
+    try {
+      const res = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Math.round(finalTotal * 100) }),
+      });
+      if (!res.ok) throw new Error("create-order failed");
+      const data = await res.json();
+      razorpayOrderId = data.order_id;
+    } catch {
+      setError("Failed to initiate payment. Please try again.");
+      setPlacing(false);
+      return;
+    }
 
+    // 2. Open Razorpay popup
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: Math.round(finalTotal * 100),
       currency: "INR",
+      order_id: razorpayOrderId,
       name: "Earthly Trinkets",
-      description: `Order #${order.id.slice(0, 8).toUpperCase()}`,
+      description: "Order Payment",
       image: "/logo.png",
       prefill: {
         name: selectedAddress!.full_name,
@@ -172,21 +184,44 @@ const CheckoutPayment = () => {
         email: user!.email ?? "",
       },
       theme: { color: "#7c5c3e" },
-      handler: async (response: { razorpay_payment_id: string }) => {
-        await supabase
-          .from("orders")
-          .update({ status: "confirmed", razorpay_payment_id: response.razorpay_payment_id })
-          .eq("id", order.id);
-        await decrementStock();
-        clearCart();
-        clearCheckout();
-        navigate(`/checkout/success?orderId=${order.id}`);
+      handler: async (response: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+      }) => {
+        // 3. Verify signature + save order via serverless function
+        try {
+          const verifyRes = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature:  response.razorpay_signature,
+              userId:              user!.id,
+              items: items.map((i) => ({
+                product_id: i.product.id,
+                name:       i.product.name,
+                price:      i.product.price,
+                quantity:   i.quantity,
+              })),
+              shippingAddress: selectedAddress,
+              totalAmount:     finalTotal,
+            }),
+          });
+          if (!verifyRes.ok) throw new Error("verify failed");
+          const { orderId } = await verifyRes.json();
+          await decrementStock();
+          clearCart();
+          clearCheckout();
+          navigate(`/checkout/success?orderId=${orderId}`);
+        } catch {
+          setError("Payment received but order confirmation failed. Please contact support.");
+          setPlacing(false);
+        }
       },
       modal: {
-        ondismiss: async () => {
-          await supabase.from("orders").update({ status: "cancelled" }).eq("id", order.id);
-          setPlacing(false);
-        },
+        ondismiss: () => setPlacing(false),
       },
     };
 
