@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -662,7 +663,7 @@ const OrdersSection = ({ userId }: { userId: string }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*, products(slug))")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -696,7 +697,7 @@ const OrdersSection = ({ userId }: { userId: string }) => {
             discount_amount: number; coupon_code: string | null;
             payment_method: string; shiprocket_awb: string | null; shipping_method: string | null;
             shipping_address: { full_name: string; line1: string; line2?: string; city: string; state: string; pincode: string };
-            order_items: { id: string; product_name: string; product_image: string | null; price: number; quantity: number }[];
+            order_items: { id: string; product_name: string; product_image: string | null; price: number; quantity: number; products: { slug: string } | null }[];
           }) => {
             const isOpen = expandedId === order.id;
             const date = new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -745,28 +746,35 @@ const OrdersSection = ({ userId }: { userId: string }) => {
                         <div>
                           <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Items Ordered</p>
                           <div className="space-y-3">
-                            {order.order_items.map((item) => (
-                              <div key={item.id} className="flex items-center gap-4 rounded-xl bg-secondary/40 p-3">
-                                {item.product_image ? (
-                                  <img
-                                    src={item.product_image}
-                                    alt={item.product_name}
-                                    className="h-16 w-16 shrink-0 rounded-xl object-cover border border-border"
-                                  />
-                                ) : (
-                                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary border border-border">
-                                    <Package size={20} className="text-muted-foreground" />
+                            {order.order_items.map((item) => {
+                              const slug = item.products?.slug;
+                              return (
+                                <div key={item.id} className="flex items-center gap-4 rounded-xl bg-secondary/40 p-3">
+                                  <Link to={slug ? `/product/${slug}` : "#"} className="shrink-0 transition-opacity hover:opacity-80">
+                                    {item.product_image ? (
+                                      <img
+                                        src={item.product_image}
+                                        alt={item.product_name}
+                                        className="h-16 w-16 rounded-xl object-cover border border-border"
+                                      />
+                                    ) : (
+                                      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-secondary border border-border">
+                                        <Package size={20} className="text-muted-foreground" />
+                                      </div>
+                                    )}
+                                  </Link>
+                                  <div className="flex-1 min-w-0">
+                                    <Link to={slug ? `/product/${slug}` : "#"} className="hover:text-primary transition-colors">
+                                      <p className="font-body text-sm font-medium text-foreground">{item.product_name}</p>
+                                    </Link>
+                                    <p className="font-body text-xs text-muted-foreground mt-0.5">
+                                      Qty {item.quantity} × ₹{item.price}
+                                    </p>
                                   </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-body text-sm font-medium text-foreground">{item.product_name}</p>
-                                  <p className="font-body text-xs text-muted-foreground mt-0.5">
-                                    Qty {item.quantity} × ₹{item.price}
-                                  </p>
+                                  <p className="font-body text-sm font-bold text-foreground shrink-0">₹{item.price * item.quantity}</p>
                                 </div>
-                                <p className="font-body text-sm font-bold text-foreground shrink-0">₹{item.price * item.quantity}</p>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
 

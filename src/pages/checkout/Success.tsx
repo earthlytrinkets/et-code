@@ -1,4 +1,4 @@
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -70,7 +70,7 @@ const CheckoutSuccess = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*, products(slug))")
         .eq("id", orderId!)
         .single();
       if (error) throw error;
@@ -185,18 +185,24 @@ const CheckoutSuccess = () => {
               <div className="space-y-3">
                 {order.order_items.map((item: {
                   id: string; product_name: string; product_image: string | null; price: number; quantity: number;
-                }) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="h-14 w-14 shrink-0 rounded-xl overflow-hidden border border-border bg-secondary">
-                      <GracefulImage src={item.product_image ?? ""} alt={item.product_name} className="h-full w-full object-cover" />
+                  products: { slug: string } | null;
+                }) => {
+                  const slug = item.products?.slug;
+                  return (
+                    <div key={item.id} className="flex items-center gap-4">
+                      <Link to={slug ? `/product/${slug}` : "#"} className="h-14 w-14 shrink-0 rounded-xl overflow-hidden border border-border bg-secondary transition-opacity hover:opacity-80">
+                        <GracefulImage src={item.product_image ?? ""} alt={item.product_name} className="h-full w-full object-cover" />
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <Link to={slug ? `/product/${slug}` : "#"} className="hover:text-primary transition-colors">
+                          <p className="font-body text-sm font-medium text-foreground truncate">{item.product_name}</p>
+                        </Link>
+                        <p className="font-body text-xs text-muted-foreground">Qty {item.quantity} × ₹{item.price}</p>
+                      </div>
+                      <span className="font-body text-sm font-semibold text-foreground">₹{item.price * item.quantity}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-sm font-medium text-foreground truncate">{item.product_name}</p>
-                      <p className="font-body text-xs text-muted-foreground">Qty {item.quantity} × ₹{item.price}</p>
-                    </div>
-                    <span className="font-body text-sm font-semibold text-foreground">₹{item.price * item.quantity}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="border-t border-border pt-4 space-y-2">
