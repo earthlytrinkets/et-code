@@ -43,7 +43,7 @@ export const useFeaturedProducts = () => {
         .select(PRODUCT_SELECT)
         .eq("is_active", true)
         .eq("is_featured", true)
-        .order("created_at", { ascending: false });
+        .order("display_order", { ascending: true });
       if (error) throw error;
       return data as Product[];
     },

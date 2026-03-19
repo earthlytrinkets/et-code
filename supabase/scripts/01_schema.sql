@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   is_featured       BOOLEAN       NOT NULL DEFAULT false,
   is_new            BOOLEAN       NOT NULL DEFAULT false,
   is_coming_soon    BOOLEAN       NOT NULL DEFAULT false,  -- greyed out, not purchasable
+  display_order     INTEGER       NOT NULL DEFAULT 0,      -- controls order in featured section
   rating            NUMERIC(3,2)  NOT NULL DEFAULT 0,      -- auto-maintained by reviews trigger
   review_count      INTEGER       NOT NULL DEFAULT 0,      -- auto-maintained by reviews trigger
   created_at        TIMESTAMPTZ   NOT NULL DEFAULT now(),

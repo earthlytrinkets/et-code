@@ -6,11 +6,19 @@ import type { Product } from "@/types/product";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Trash2, Eye, EyeOff, Star, Upload, X, ImageIcon,
+  Plus, Pencil, Trash2, Eye, EyeOff, Star, Upload, X, ImageIcon, GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -337,12 +345,145 @@ const ProductFormModal = ({
   );
 };
 
+// ─── Sortable row ─────────────────────────────────────────────────────────────
+
+const SortableRow = ({
+  p,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  p: Product;
+  onEdit: () => void;
+  onToggle: (field: string, value: boolean) => void;
+  onDelete: () => void;
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: p.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "hsl(var(--secondary))" : undefined,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="transition-colors hover:bg-secondary/30">
+      {/* Grip handle */}
+      <td className="px-3 py-3 w-8">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+        >
+          <GripVertical size={16} />
+        </button>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          {p.images[0] ? (
+            <img src={p.images[0]} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+              <ImageIcon size={14} className="text-muted-foreground" />
+            </div>
+          )}
+          <div>
+            <p className="font-body font-medium text-foreground">{p.name}</p>
+            <p className="font-body text-xs text-muted-foreground">{p.slug}</p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 font-body text-muted-foreground">{p.categories?.name ?? "—"}</td>
+      <td className="px-4 py-3 font-body text-foreground">
+        ₹{p.price}
+        {p.compare_at_price && (
+          <span className="ml-1 text-xs text-muted-foreground line-through">₹{p.compare_at_price}</span>
+        )}
+      </td>
+      <td className="px-4 py-3 font-body text-foreground">
+        <div className="flex items-center gap-2">
+          <span>{p.stock}</span>
+          {p.is_coming_soon ? (
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Coming Soon</span>
+          ) : p.stock === 0 ? (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">Out of Stock</span>
+          ) : null}
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex gap-2">
+          <button
+            title={p.is_active ? "Deactivate" : "Activate"}
+            onClick={() => onToggle("is_active", !p.is_active)}
+            className={`rounded-full p-1.5 transition-colors ${p.is_active ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary"}`}
+          >
+            {p.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
+          </button>
+          <button
+            title={p.is_featured ? "Unfeature" : "Feature"}
+            onClick={() => onToggle("is_featured", !p.is_featured)}
+            className={`rounded-full p-1.5 transition-colors ${p.is_featured ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary"}`}
+          >
+            <Star size={14} className={p.is_featured ? "fill-primary" : ""} />
+          </button>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex gap-2">
+          <button
+            onClick={onEdit}
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={onDelete}
+            className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+};
+
 // ─── Products Section (embeddable) ───────────────────────────────────────────
 
 export const AdminProductsSection = () => {
   const { data: products = [], isLoading } = useAllProducts();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Product | null | "new">(null);
+  const [rows, setRows] = useState<Product[]>([]);
+
+  // sync rows when products load/change
+  const sorted = [...products].sort((a, b) => a.display_order - b.display_order);
+  const displayRows = rows.length ? rows : sorted;
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const saveOrder = useMutation({
+    mutationFn: async (ordered: Product[]) => {
+      const updates = ordered.map((p, i) =>
+        supabase.from("products").update({ display_order: i + 1 }).eq("id", p.id)
+      );
+      await Promise.all(updates);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+    onError: () => toast.error("Failed to save order"),
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = displayRows.findIndex((p) => p.id === active.id);
+    const newIndex = displayRows.findIndex((p) => p.id === over.id);
+    const reordered = arrayMove(displayRows, oldIndex, newIndex);
+    setRows(reordered);
+    saveOrder.mutate(reordered);
+  };
 
   const toggle = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: string; value: boolean }) => {
@@ -388,6 +529,7 @@ export const AdminProductsSection = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/40 text-left">
+                <th className="px-3 py-3 w-8" />
                 <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Product</th>
                 <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Category</th>
                 <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Price</th>
@@ -396,80 +538,21 @@ export const AdminProductsSection = () => {
                 <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {products.map((p) => (
-                <tr key={p.id} className="transition-colors hover:bg-secondary/30">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {p.images[0] ? (
-                        <img src={p.images[0]} alt="" className="h-10 w-10 rounded-lg object-cover border border-border" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                          <ImageIcon size={14} className="text-muted-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-body font-medium text-foreground">{p.name}</p>
-                        <p className="font-body text-xs text-muted-foreground">{p.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-body text-muted-foreground">{p.categories?.name ?? "—"}</td>
-                  <td className="px-4 py-3 font-body text-foreground">
-                    ₹{p.price}
-                    {p.compare_at_price && (
-                      <span className="ml-1 text-xs text-muted-foreground line-through">₹{p.compare_at_price}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-body text-foreground">
-                    <div className="flex items-center gap-2">
-                      <span>{p.stock}</span>
-                      {p.is_coming_soon ? (
-                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Coming Soon</span>
-                      ) : p.stock === 0 ? (
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">Out of Stock</span>
-                      ) : null}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        title={p.is_active ? "Deactivate" : "Activate"}
-                        onClick={() => toggle.mutate({ id: p.id, field: "is_active", value: !p.is_active })}
-                        className={`rounded-full p-1.5 transition-colors ${p.is_active ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-secondary"}`}
-                      >
-                        {p.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
-                      </button>
-                      <button
-                        title={p.is_featured ? "Unfeature" : "Feature"}
-                        onClick={() => toggle.mutate({ id: p.id, field: "is_featured", value: !p.is_featured })}
-                        className={`rounded-full p-1.5 transition-colors ${p.is_featured ? "text-amber-500 hover:bg-amber-50" : "text-muted-foreground hover:bg-secondary"}`}
-                      >
-                        <Star size={14} />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditing(p)}
-                        className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id);
-                        }}
-                        className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={displayRows.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+                <tbody className="divide-y divide-border">
+                  {displayRows.map((p) => (
+                    <SortableRow
+                      key={p.id}
+                      p={p}
+                      onEdit={() => setEditing(p)}
+                      onToggle={(field, value) => toggle.mutate({ id: p.id, field, value })}
+                      onDelete={() => { if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id); }}
+                    />
+                  ))}
+                </tbody>
+              </SortableContext>
+            </DndContext>
           </table>
 
           {products.length === 0 && (
