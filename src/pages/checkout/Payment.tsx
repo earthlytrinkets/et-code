@@ -250,19 +250,17 @@ const CheckoutPayment = () => {
               {[
                 {
                   id: "cod" as const,
-                  icon: Truck,
                   title: "Cash on Delivery",
                   description: "Pay in cash when your order arrives",
                   badge: null,
                 },
                 {
                   id: "razorpay" as const,
-                  icon: CreditCard,
                   title: "Pay Online",
-                  description: "UPI, cards, net banking via Razorpay",
+                  description: "UPI, cards, net banking & wallets",
                   badge: "Recommended",
                 },
-              ].map(({ id, icon: Icon, title, description, badge }) => {
+              ].map(({ id, title, description, badge }) => {
                 const isSelected = method === id;
                 return (
                   <motion.div
@@ -283,7 +281,7 @@ const CheckoutPayment = () => {
 
                       {/* Icon */}
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${isSelected ? "bg-primary/15 text-primary" : "bg-secondary text-muted-foreground"}`}>
-                        <Icon size={20} />
+                        {id === "razorpay" ? <CreditCard size={20} /> : <Truck size={20} />}
                       </div>
 
                       {/* Text */}
@@ -295,6 +293,18 @@ const CheckoutPayment = () => {
                           )}
                         </div>
                         <p className="font-body text-xs text-muted-foreground mt-0.5">{description}</p>
+                        {id === "razorpay" && (
+                          <div className="flex items-center gap-3 mt-2">
+                            <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" className="h-5 opacity-70" />
+                            <div className="flex gap-1.5 items-center">
+                              {["UPI", "Visa", "MC", "RuPay"].map((label) => (
+                                <span key={label} className="rounded bg-secondary px-1.5 py-0.5 font-body text-[9px] font-semibold text-muted-foreground">
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
