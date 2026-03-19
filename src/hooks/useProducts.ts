@@ -16,6 +16,7 @@ export const useProducts = (filters?: { categorySlug?: string; search?: string }
         .from("products")
         .select(PRODUCT_SELECT)
         .eq("is_active", true)
+        .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
 
       if (filters?.categorySlug) {
@@ -82,6 +83,7 @@ export const useAllProducts = () => {
       const { data, error } = await supabase
         .from("products")
         .select(PRODUCT_SELECT)
+        .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Product[];
