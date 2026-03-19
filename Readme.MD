@@ -1,73 +1,134 @@
-# Welcome to your Lovable project
+# Earthly Trinkets
 
-## Project info
+E-commerce web app for **Earthly Trinkets** — a handcrafted resin art business selling jewellery, paperweights, home decor, and custom pieces.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**Live:** [earthlytrinkets.in](https://www.earthlytrinkets.in)
 
-## How can I edit this code?
+## Tech Stack
 
-There are several ways of editing your application.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| UI | Tailwind CSS + shadcn/ui + Framer Motion |
+| Routing | React Router DOM v6 |
+| State | React Context (Auth, Cart, Theme, Checkout) + TanStack React Query |
+| Forms | React Hook Form + Zod |
+| Backend/DB | Supabase (PostgreSQL + Auth + Storage) |
+| Payments | Razorpay (with server-side verification) |
+| Serverless API | Vercel Serverless Functions |
+| Hosting | Vercel |
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Google OAuth + email/password authentication
+- Product catalog with categories, search, and filters
+- Image carousel with thumbnail navigation
+- Shopping cart with quantity controls (persisted to localStorage)
+- Multi-step checkout: Address → Payment → Confirmation
+- Razorpay payment integration (UPI, cards, net banking)
+- Cash on Delivery option
+- Coupon code support
+- Product reviews and ratings
+- Admin panel — product CRUD, image upload, drag-and-drop ordering, order management
+- Dark/light theme toggle
+- Responsive design (mobile + desktop)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+### Prerequisites
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+
+- npm
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Setup
 
-Follow these steps:
+```bash
+# Clone the repo
+git clone https://github.com/your-username/et-code.git
+cd et-code
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Create .env file with your keys
+cp .env.example .env
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app runs at `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Environment Variables
 
-**Use GitHub Codespaces**
+Create a `.env` file in the project root:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+VITE_SUPABASE_PROJECT_ID=your_project_id
+VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_RAZORPAY_KEY_ID=rzp_test_xxx
 
-## What technologies are used for this project?
+# Backend only (used by Vercel serverless functions)
+RAZORPAY_KEY_ID=rzp_test_xxx
+RAZORPAY_KEY_SECRET=your_secret
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
 
-This project is built with:
+`VITE_` prefixed variables are exposed to the frontend. Non-prefixed variables are only available in serverless functions.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Project Structure
 
-## How can I deploy this project?
+```
+├── api/                    # Vercel serverless functions
+│   ├── create-order.js     # Creates Razorpay order
+│   └── verify-payment.js   # Verifies payment signature + saves order
+├── src/
+│   ├── components/         # Reusable UI components
+│   ├── contexts/           # React Context providers (Auth, Cart, Theme, Checkout)
+│   ├── hooks/              # Custom hooks (useProducts, useReviews, etc.)
+│   ├── integrations/       # Supabase client + types
+│   ├── pages/              # Route-level page components
+│   │   ├── admin/          # Admin panel pages
+│   │   └── checkout/       # Checkout flow (Address, Payment, Success)
+│   └── types/              # TypeScript type definitions
+├── supabase/scripts/       # SQL migration scripts
+└── vercel.json             # Vercel config + routing
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Database Setup
 
-## Can I connect a custom domain to my Lovable project?
+Run the SQL scripts in `supabase/scripts/` in order (00 → 03) in the Supabase SQL Editor:
 
-Yes, you can!
+1. `00_prerequisites.sql` — enums, extensions
+2. `01_schema.sql` — tables, RLS policies, functions
+3. `02_storage.sql` — product-images bucket + policies
+4. `03_admin_setup.sql` — admin role setup
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Deployment
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Deployed on **Vercel** with automatic GitHub integration.
+
+For manual deployment:
+```bash
+vercel --prod
+```
+
+Ensure all environment variables are configured in Vercel Dashboard → Settings → Environment Variables.
+
+## Payment Flow
+
+```
+Cart → Address → Payment → Razorpay Popup → Verification → Order Confirmation
+```
+
+1. Frontend calls `POST /api/create-order` with amount
+2. Serverless function creates Razorpay order, returns `order_id`
+3. Frontend opens Razorpay checkout popup
+4. On success, frontend calls `POST /api/verify-payment` with signature
+5. Serverless function verifies HMAC signature, saves order to Supabase
+6. User redirected to order confirmation page
+
+## Contact
+
+**Email:** business.earthlytrinkets@gmail.com
