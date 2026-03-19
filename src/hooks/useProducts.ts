@@ -9,6 +9,8 @@ const PRODUCT_SELECT = "*, categories(name, slug)";
 export const useProducts = (filters?: { categorySlug?: string; search?: string }) => {
   return useQuery({
     queryKey: ["products", filters],
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -37,6 +39,8 @@ export const useProducts = (filters?: { categorySlug?: string; search?: string }
 export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ["products", "featured"],
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -54,6 +58,8 @@ export const useFeaturedProducts = () => {
 export const useProduct = (slug: string) => {
   return useQuery({
     queryKey: ["product", slug],
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")

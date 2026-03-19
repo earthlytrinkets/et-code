@@ -108,15 +108,19 @@ const Cart = () => {
                 exit={{ opacity: 0 }}
                 className="flex gap-4 rounded-xl bg-card p-4 shadow-soft"
               >
-                <GracefulImage
-                  src={item.product.images[0] ?? ""}
-                  alt={item.product.name}
-                  className="h-24 w-24 rounded-lg object-cover"
-                />
+                <Link to={`/product/${item.product.slug}`}>
+                  <GracefulImage
+                    src={item.product.images[0] ?? ""}
+                    alt={item.product.name}
+                    className="h-24 w-24 rounded-lg object-cover transition-opacity hover:opacity-80"
+                  />
+                </Link>
                 <div className="flex flex-1 flex-col justify-between">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-display text-sm font-semibold text-foreground">{item.product.name}</h3>
+                      <Link to={`/product/${item.product.slug}`} className="hover:text-primary transition-colors">
+                        <h3 className="font-display text-sm font-semibold text-foreground">{item.product.name}</h3>
+                      </Link>
                     </div>
                     <button onClick={() => removeFromCart(item.product.id)} className="text-muted-foreground hover:text-destructive">
                       <X size={16} />

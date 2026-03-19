@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, CreditCard, Truck, ShieldCheck, MapPin, Check, Tag } from "lucide-react";
+
 import GracefulImage from "@/components/GracefulImage";
 import { motion } from "framer-motion";
 

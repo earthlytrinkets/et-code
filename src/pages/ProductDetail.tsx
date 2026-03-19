@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -6,7 +6,7 @@ import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewSection from "@/components/ReviewSection";
-import { ShoppingBag, Star, ArrowLeft, Plus, Minus, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, Star, ArrowLeft, ArrowRight, Plus, Minus, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
 
@@ -17,6 +17,7 @@ const ProductDetail = () => {
   const { items, addToCart, updateQuantity } = useCart();
   const { isAdmin, roleChecked } = useIsAdmin();
 
+  const navigate = useNavigate();
   const cartItem = product ? items.find((i) => i.product.id === product.id) : undefined;
   const qty = cartItem?.quantity ?? 0;
 
@@ -200,20 +201,28 @@ const ProductDetail = () => {
                     <ShoppingBag size={16} /> Add to Cart
                   </button>
                 ) : (
-                  /* ── Quantity controls ── */
-                  <div className="inline-flex items-center rounded-full border border-border bg-card shadow-soft">
+                  /* ── Quantity controls + Proceed ── */
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="inline-flex items-center rounded-full border border-border bg-card shadow-soft">
+                      <button
+                        onClick={() => updateQuantity(product.id, qty - 1)}
+                        className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="min-w-[48px] text-center font-display text-base font-bold text-foreground">{qty}</span>
+                      <button
+                        onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
+                        className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
                     <button
-                      onClick={() => updateQuantity(product.id, qty - 1)}
-                      className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+                      onClick={() => navigate("/checkout/address")}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
                     >
-                      <Minus size={16} />
-                    </button>
-                    <span className="min-w-[48px] text-center font-display text-base font-bold text-foreground">{qty}</span>
-                    <button
-                      onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
-                      className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
-                    >
-                      <Plus size={16} />
+                      Proceed to Checkout <ArrowRight size={15} />
                     </button>
                   </div>
                 )}
