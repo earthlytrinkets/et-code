@@ -6,9 +6,9 @@ import GracefulImage from "@/components/GracefulImage";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewSection from "@/components/ReviewSection";
-import { ShoppingBag, Star, ArrowLeft, Plus, Minus } from "lucide-react";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { ShoppingBag, Star, ArrowLeft, Plus, Minus, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -19,6 +19,18 @@ const ProductDetail = () => {
 
   const cartItem = product ? items.find((i) => i.product.id === product.id) : undefined;
   const qty = cartItem?.quantity ?? 0;
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const images = product?.images ?? [];
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [thumbOffset, setThumbOffset] = useState(0);
+  const THUMBS_VISIBLE = 4;
+
+  const prev = () => { setDirection(-1); setActiveIndex((i) => (i - 1 + images.length) % images.length); };
+  const next = () => { setDirection(1);  setActiveIndex((i) => (i + 1) % images.length); };
+  const goTo = (i: number) => { setDirection(i > activeIndex ? 1 : -1); setActiveIndex(i); };
+
 
   if (isLoading) {
     return (
@@ -54,12 +66,88 @@ const ProductDetail = () => {
         </Link>
 
         <div className="grid gap-12 lg:grid-cols-2">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden rounded-xl bg-secondary">
-            <GracefulImage
-              src={product.images[0] ?? ""}
-              alt={product.name}
-              className="w-full object-cover"
-            />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
+            {/* Main image */}
+            <div className="relative overflow-hidden rounded-xl bg-secondary aspect-square">
+              <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                <motion.div
+                  key={activeIndex}
+                  custom={direction}
+                  variants={{
+                    enter: (d) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
+                    center: { x: 0, opacity: 1 },
+                    exit:  (d) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
+                  }}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.35, ease: "easeInOut" }}
+                  className="absolute inset-0"
+                >
+                  <GracefulImage
+                    src={images[activeIndex] ?? ""}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {images.length > 1 && (
+                <>
+                  <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card/80 backdrop-blur-sm shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+                    <ChevronRight size={18} />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+                    {images.map((_, i) => (
+                      <button key={i} onClick={() => goTo(i)} className={`h-1.5 rounded-full transition-all ${i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-card/70"}`} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnail strip with arrow buttons */}
+            {images.length > 1 && (
+              <div className="flex items-center gap-2">
+                {/* Left arrow */}
+                <button
+                  onClick={() => setThumbOffset((o) => Math.max(0, o - 1))}
+                  disabled={thumbOffset === 0}
+                  className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={15} />
+                </button>
+
+                {/* Visible thumbnails */}
+                <div className="flex flex-1 gap-2 overflow-hidden">
+                  {images.slice(thumbOffset, thumbOffset + THUMBS_VISIBLE).map((img, idx) => {
+                    const i = thumbOffset + idx;
+                    return (
+                      <button
+                        key={i}
+                        ref={(el) => { thumbRefs.current[i] = el; }}
+                        onClick={() => goTo(i)}
+                        className={`flex-1 aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeIndex ? "border-primary" : "border-transparent"}`}
+                      >
+                        <GracefulImage src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right arrow */}
+                <button
+                  onClick={() => setThumbOffset((o) => Math.min(images.length - THUMBS_VISIBLE, o + 1))}
+                  disabled={thumbOffset + THUMBS_VISIBLE >= images.length}
+                  className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+            )}
           </motion.div>
 
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
