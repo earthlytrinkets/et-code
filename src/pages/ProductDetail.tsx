@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import GracefulImage from "@/components/GracefulImage";
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReviewSection from "@/components/ReviewSection";
@@ -28,10 +28,18 @@ const ProductDetail = () => {
   const [thumbOffset, setThumbOffset] = useState(0);
   const THUMBS_VISIBLE = 4;
 
-  // Preload all product images on mount so carousel transitions are instant
+  // Preload all product images and track when ready
+  const [imagesReady, setImagesReady] = useState(false);
   useEffect(() => {
+    if (images.length === 0) return;
+    setImagesReady(false);
+    let loaded = 0;
     images.forEach((src) => {
       const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded >= images.length) setImagesReady(true);
+      };
       img.src = src;
     });
   }, [images]);
@@ -78,6 +86,11 @@ const ProductDetail = () => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
             {/* Main image */}
             <div className="relative overflow-hidden rounded-xl bg-secondary aspect-square">
+              {!imagesReady && (
+                <div className="absolute inset-0 flex items-center justify-center bg-secondary">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              )}
               <AnimatePresence initial={false} custom={direction} mode="popLayout">
                 <motion.div
                   key={activeIndex}
@@ -93,7 +106,7 @@ const ProductDetail = () => {
                   transition={{ duration: 0.35, ease: "easeInOut" }}
                   className="absolute inset-0"
                 >
-                  <GracefulImage
+                  <img
                     src={images[activeIndex] ?? ""}
                     alt={product.name}
                     className="w-full h-full object-cover"
@@ -141,7 +154,7 @@ const ProductDetail = () => {
                         onClick={() => goTo(i)}
                         className={`flex-1 aspect-square rounded-lg overflow-hidden border-2 transition-colors ${i === activeIndex ? "border-primary" : "border-transparent"}`}
                       >
-                        <GracefulImage src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                        <img src={img} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
                       </button>
                     );
                   })}

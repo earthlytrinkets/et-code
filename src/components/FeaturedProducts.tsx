@@ -80,7 +80,7 @@ const FeaturedProducts = () => {
             ) : (
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory overscroll-x-contain [touch-action:pan-x] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className="flex gap-6 overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory overscroll-x-contain [touch-action:pan-x_pan-y] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
                 {featured.map((product, index) => (
                   <div

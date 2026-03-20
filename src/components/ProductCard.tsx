@@ -33,7 +33,6 @@ const ProductCard = ({ product }: { product: Product }) => {
             src={imageUrl}
             alt={product.name}
             className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
           />
           {/* Availability overlay */}
           {isUnavailable && (

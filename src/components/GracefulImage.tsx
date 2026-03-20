@@ -19,7 +19,7 @@ const GracefulImage = ({ src, alt, className, wrapperClassName, ...props }: Grac
         alt={alt}
         loading="eager"
         className={cn(
-          "transition-opacity duration-500 ease-out",
+          "transition-opacity duration-200 ease-out",
           loaded ? "opacity-100" : "opacity-0",
           className
         )}
