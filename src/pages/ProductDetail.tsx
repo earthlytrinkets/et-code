@@ -28,6 +28,14 @@ const ProductDetail = () => {
   const [thumbOffset, setThumbOffset] = useState(0);
   const THUMBS_VISIBLE = 4;
 
+  // Preload all product images on mount so carousel transitions are instant
+  useEffect(() => {
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [images]);
+
   const prev = () => { setDirection(-1); setActiveIndex((i) => (i - 1 + images.length) % images.length); };
   const next = () => { setDirection(1);  setActiveIndex((i) => (i + 1) % images.length); };
   const goTo = (i: number) => { setDirection(i > activeIndex ? 1 : -1); setActiveIndex(i); };
@@ -203,7 +211,7 @@ const ProductDetail = () => {
                 ) : (
                   /* ── Quantity controls + Proceed ── */
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <div className="inline-flex items-center rounded-full border border-border bg-card shadow-soft">
+                    <div className="inline-flex self-start items-center rounded-full border border-border bg-card shadow-soft">
                       <button
                         onClick={() => updateQuantity(product.id, qty - 1)}
                         className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"

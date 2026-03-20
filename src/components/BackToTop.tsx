@@ -8,9 +8,7 @@ const BackToTop = () => {
 
   useEffect(() => {
     const update = () => {
-      const nearBottom =
-        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 200;
-      setShow(nearBottom);
+      setShow(window.scrollY > 400);
 
       const bar = document.getElementById("footer-bar");
       if (bar) {
