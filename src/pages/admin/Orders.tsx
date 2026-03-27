@@ -207,23 +207,16 @@ const OrderRow = ({ order }: { order: Order }) => {
 
       if (!srOrder?.shipment_id) { toast.error("Shiprocket order creation failed"); setSrLoading(false); return; }
 
-      // 2. Assign AWB
-      const awbRes = await callShiprocket({
-        action: "assign_awb",
-        token: srToken,
-        shipment_id: srOrder.shipment_id,
-      });
-
-      const awb = awbRes?.awb_assign_status_message === "AWB Assigned" ? awbRes?.response?.data?.awb_code : null;
-
+      // Save Shiprocket order/shipment IDs but don't mark as shipped yet.
+      // Admin assigns a courier + AWB in the Shiprocket dashboard, then
+      // enters the AWB here (or uses "Personal Courier" tab) to mark shipped.
       await updateOrder.mutateAsync({
-        status: "shipped",
+        status: "processing",
         shipping_method: "shiprocket",
         shiprocket_order_id: String(srOrder.order_id),
-        shiprocket_awb: awb ?? String(srOrder.shipment_id),
       } as never);
 
-      toast.success(`Shipment created${awb ? ` · AWB: ${awb}` : ""}`);
+      toast.success("Shiprocket order created — assign a courier in the Shiprocket dashboard, then enter the AWB here to mark shipped.");
     } catch (e) { toast.error(`Shiprocket error: ${String(e)}`); }
     setSrLoading(false);
   };
@@ -368,7 +361,46 @@ const OrderRow = ({ order }: { order: Order }) => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {!srToken ? (
+                  {order.shiprocket_order_id ? (
+                    /* Shiprocket order exists — show AWB entry to mark shipped */
+                    <div className="space-y-3">
+                      <p className="font-body text-xs text-primary font-medium">
+                        Shiprocket Order #{order.shiprocket_order_id}
+                      </p>
+                      {order.shiprocket_awb ? (
+                        <p className="font-body text-xs text-muted-foreground">
+                          AWB: <span className="font-semibold text-foreground">{order.shiprocket_awb}</span>
+                        </p>
+                      ) : (
+                        <>
+                          <p className="font-body text-xs text-muted-foreground">
+                            Assign a courier in the Shiprocket dashboard, then enter the AWB below to mark shipped.
+                          </p>
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <input
+                              value={trackingInput}
+                              onChange={(e) => setTrackingInput(e.target.value)}
+                              placeholder="Enter AWB from Shiprocket"
+                              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!trackingInput.trim()) return;
+                                await updateOrder.mutateAsync({
+                                  status: "shipped",
+                                  shiprocket_awb: trackingInput.trim(),
+                                } as never);
+                              }}
+                              disabled={!trackingInput.trim() || updateOrder.isPending}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-body text-xs font-semibold text-primary-foreground disabled:opacity-50 shrink-0"
+                            >
+                              <Send size={12} /> Mark Shipped
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ) : !srToken ? (
                     <>
                       <p className="font-body text-xs text-muted-foreground">Enter your Shiprocket credentials to connect</p>
                       <div className="grid gap-2 sm:grid-cols-2">
