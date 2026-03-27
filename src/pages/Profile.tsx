@@ -54,11 +54,10 @@ type Address = {
   city: string;
   state: string;
   pincode: string;
-  country: string;
   is_default: boolean;
 };
 
-type AddressFormData = Omit<Address, "id" | "user_id" | "country">;
+type AddressFormData = Omit<Address, "id" | "user_id">;
 
 const emptyAddressForm: AddressFormData = {
   label: "Home",
@@ -842,13 +841,13 @@ const OrdersSection = ({ userId }: { userId: string }) => {
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((order: {
+          {(orders as unknown as {
             id: string; created_at: string; status: string; total: number;
             discount_amount: number; coupon_code: string | null;
             payment_method: string; shiprocket_awb: string | null; shipping_method: string | null;
             shipping_address: { full_name: string; line1: string; line2?: string; city: string; state: string; pincode: string };
             order_items: { id: string; product_name: string; product_image: string | null; price: number; quantity: number; products: { slug: string } | null }[];
-          }) => {
+          }[]).map((order) => {
             const isOpen = expandedId === order.id;
             const date = new Date(order.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
             return (

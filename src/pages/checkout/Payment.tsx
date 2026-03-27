@@ -87,7 +87,7 @@ const CheckoutPayment = () => {
 
   const buildOrderPayload = (paymentMethod: "cod" | "razorpay", razorpayPaymentId?: string) => ({
     user_id: user!.id,
-    status: "confirmed",
+    status: "confirmed" as const,
     subtotal: totalPrice,
     discount_amount: discountAmount,
     coupon_code: appliedCoupon?.code ?? null,
