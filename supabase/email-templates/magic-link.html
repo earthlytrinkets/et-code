@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign In</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f0eb">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0eb;padding:32px 16px">
+    <tr><td align="center">
+
+      <!-- Logo -->
+      <table width="100%" style="max-width:580px;margin-bottom:20px" cellpadding="0" cellspacing="0">
+        <tr><td style="text-align:center;padding:0 0 20px">
+          <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:28px;color:#2d2015">
+            <span style="color:#4a7c59">Earthly</span> Trinkets
+          </p>
+          <p style="margin:3px 0 0;font-family:Arial,sans-serif;font-size:10px;color:#8a7a6a;letter-spacing:0.25em;text-transform:uppercase">Handcrafted with love</p>
+        </td></tr>
+      </table>
+
+      <!-- Card -->
+      <table width="100%" style="max-width:580px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(45,32,21,0.07)" cellpadding="0" cellspacing="0">
+
+        <!-- Header -->
+        <tr><td style="background:#4a7c59;padding:36px 40px;text-align:center">
+          <div style="display:inline-block;width:60px;height:60px;background:rgba(255,255,255,0.15);border-radius:50%;line-height:60px;font-size:28px;margin-bottom:16px;text-align:center">&#10024;</div>
+          <h1 style="margin:0;color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;font-style:italic;line-height:1.3">Sign In to Your Account</h1>
+          <p style="margin:10px 0 0;color:rgba(255,255,255,0.8);font-family:Arial,sans-serif;font-size:13px">Click the link below to sign in instantly</p>
+        </td></tr>
+
+        <!-- Body -->
+        <tr><td style="padding:36px 40px">
+
+          <p style="margin:0 0 24px;font-size:15px;color:#2d2015;line-height:1.7;font-family:Arial,sans-serif">
+            Hi! You requested a magic link to sign in to your Earthly Trinkets account.
+            Click the button below &mdash; no password needed.
+          </p>
+
+          <!-- CTA -->
+          <div style="text-align:center;margin-top:28px">
+            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#4a7c59;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:50px;font-size:13px;font-family:Arial,sans-serif;font-weight:700;letter-spacing:0.04em">
+              Sign In &rarr;
+            </a>
+          </div>
+
+          <!-- Warning -->
+          <div style="background:#fff8f5;border:1px solid #f0d5c8;border-radius:10px;padding:14px 18px;margin-top:28px">
+            <p style="margin:0;font-size:13px;color:#8a4a35;font-family:Arial,sans-serif;line-height:1.6">
+              &#128161; <strong>Didn't request this?</strong> You can safely ignore this email.
+              No one can access your account without clicking the link above.
+            </p>
+          </div>
+
+          <p style="margin:28px 0 0;font-size:12px;color:#8a7a6a;font-family:Arial,sans-serif;line-height:1.6">
+            This link expires in 1 hour and can only be used once.
+          </p>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:24px 40px 28px;text-align:center;border-top:1px solid #e8e0d5">
+          <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;color:#2d2015">
+            <span style="color:#4a7c59">Earthly</span> Trinkets
+          </p>
+          <p style="margin:0;font-size:12px;color:#8a7a6a;font-family:Arial,sans-serif;line-height:1.8">
+            Questions? Write to us at
+            <a href="mailto:business.earthlytrinkets@gmail.com" style="color:#4a7c59;text-decoration:none">business.earthlytrinkets@gmail.com</a><br>
+            &copy; 2025 Earthly Trinkets &middot; Made with &hearts; in India
+          </p>
+        </td></tr>
+
+      </table>
+
+      <!-- Bottom note -->
+      <table width="100%" style="max-width:580px" cellpadding="0" cellspacing="0">
+        <tr><td style="text-align:center;padding:18px 0 0">
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#b8a898">
+            You're receiving this because a sign-in was requested for your account.
+          </p>
+        </td></tr>
+      </table>
+
+    </td></tr>
+  </table>
+</body>
+</html>

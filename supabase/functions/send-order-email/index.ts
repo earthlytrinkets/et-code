@@ -367,6 +367,73 @@ function orderDeliveredEmail(order: Order) {
   );
 }
 
+function orderCancelledEmail(order: Order) {
+  const items = order.order_items as Item[];
+  const isCOD = order.payment_method === "cod";
+
+  return wrap(
+    cardHeader("&#10060;", "Order Cancelled", "We're sorry to see this one go"),
+    `${orderLabel(order.id as string)}
+
+    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      Your order has been cancelled. ${isCOD
+        ? "Since this was a Cash on Delivery order, no payment was charged."
+        : "If a payment was made, a refund will be initiated shortly. Please allow 5&ndash;7 business days for it to reflect in your account."}
+    </p>
+
+    <!-- Items recap -->
+    <p style="margin:0 0 8px;font-size:11px;font-family:Arial,sans-serif;letter-spacing:0.15em;text-transform:uppercase;color:${C.muted};border-bottom:2px solid ${C.border};padding-bottom:8px">Cancelled Items</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px">
+      ${itemsRows(items)}
+    </table>
+
+    <div style="background:${C.bg};border-radius:10px;padding:16px 20px;margin-bottom:24px">
+      <p style="margin:0;font-size:13px;color:${C.text};font-family:Arial,sans-serif;line-height:1.6">
+        &#128172; Changed your mind? We'd love to help you find the perfect piece.
+        Browse our collection or reach out for a custom order!
+      </p>
+    </div>
+
+    ${ctaButton("Browse Collection &rarr;", `${SITE_URL}/shop`)}`
+  );
+}
+
+function orderRefundedEmail(order: Order) {
+  return wrap(
+    cardHeader("&#128176;", "Refund Processed", "Your money is on its way back"),
+    `${orderLabel(order.id as string)}
+
+    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      We've processed a refund for your order. The amount of
+      <strong>&#8377;${order.total}</strong> will be credited back to your original payment method.
+    </p>
+
+    <div style="background:${C.bg};border-radius:10px;padding:18px 20px;margin-bottom:24px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Refund Amount</td>
+          <td style="padding:6px 0;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif;text-align:right">&#8377;${order.total}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Payment Method</td>
+          <td style="padding:6px 0;font-size:13px;color:${C.text};font-family:Arial,sans-serif;text-align:right">${order.payment_method === "cod" ? "Cash on Delivery" : "Razorpay (Online)"}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Timeline</td>
+          <td style="padding:6px 0;font-size:13px;color:${C.text};font-family:Arial,sans-serif;text-align:right">5&ndash;7 business days</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="margin:0 0 24px;font-size:14px;color:${C.muted};line-height:1.7;font-family:Arial,sans-serif">
+      If you don't see the refund within 7 business days, please contact us at
+      <a href="mailto:${ADMIN_EMAIL}" style="color:${C.green};text-decoration:none">${ADMIN_EMAIL}</a>.
+    </p>
+
+    ${ctaButton("Shop Again &rarr;", `${SITE_URL}/shop`)}`
+  );
+}
+
 function welcomeEmail(name: string) {
   const greeting = name ? `Hello, <strong>${name}</strong>!` : "Hello there!";
   return wrap(
@@ -408,6 +475,73 @@ function welcomeEmail(name: string) {
     </table>
 
     ${ctaButton("Explore Our Collection &rarr;", `${SITE_URL}/shop`)}`
+  );
+}
+
+function passwordResetEmail(name: string, resetLink: string) {
+  const greeting = name ? `Hi <strong>${name}</strong>,` : "Hi there,";
+  return wrap(
+    cardHeader("&#128274;", "Reset Your Password", "We received a request to reset your password"),
+    `<p style="margin:0 0 20px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      ${greeting}
+    </p>
+
+    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      We received a request to reset the password for your Earthly Trinkets account.
+      Click the button below to choose a new password.
+    </p>
+
+    ${ctaButton("Reset Password &rarr;", resetLink)}
+
+    <div style="background:#fff8f5;border:1px solid #f0d5c8;border-radius:10px;padding:14px 18px;margin-top:28px">
+      <p style="margin:0;font-size:13px;color:#8a4a35;font-family:Arial,sans-serif;line-height:1.6">
+        &#128161; <strong>Didn't request this?</strong> You can safely ignore this email.
+        Your password won't change unless you click the button above.
+      </p>
+    </div>
+
+    <p style="margin:28px 0 0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6">
+      This link expires in 1 hour. If it's expired,
+      <a href="${SITE_URL}" style="color:${C.green};text-decoration:none">request a new one</a>.
+    </p>`
+  );
+}
+
+function passwordChangedEmail(name: string) {
+  const greeting = name ? `Hi <strong>${name}</strong>,` : "Hi there,";
+  return wrap(
+    cardHeader("&#9989;", "Password Updated", "Your account security has been updated"),
+    `<p style="margin:0 0 20px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      ${greeting}
+    </p>
+
+    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+      Your password has been successfully changed. You can now use your new password to sign in to your Earthly Trinkets account.
+    </p>
+
+    <div style="background:${C.bg};border-radius:10px;padding:18px 20px;margin-bottom:24px">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="width:34px;vertical-align:middle">
+            <div style="width:28px;height:28px;background:${C.green};border-radius:50%;text-align:center;line-height:28px;font-size:14px;color:${C.white}">&#10003;</div>
+          </td>
+          <td style="padding-left:12px;vertical-align:middle">
+            <p style="margin:0;font-size:13px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">Password Changed Successfully</p>
+            <p style="margin:2px 0 0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif">Your account is secure</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="background:#fff8f5;border:1px solid #f0d5c8;border-radius:10px;padding:14px 18px;margin-bottom:24px">
+      <p style="margin:0;font-size:13px;color:#8a4a35;font-family:Arial,sans-serif;line-height:1.6">
+        &#128161; <strong>Wasn't you?</strong> If you didn't change your password, please contact us immediately at
+        <a href="mailto:${ADMIN_EMAIL}" style="color:${C.accent};text-decoration:none">${ADMIN_EMAIL}</a>
+        to secure your account.
+      </p>
+    </div>
+
+    ${ctaButton("Go to Your Account &rarr;", `${SITE_URL}/profile`)}`
   );
 }
 
@@ -504,6 +638,14 @@ const EVENTS: Record<string, EventConfig> = {
     subject: (id) => `\u{1F338} Delivered! How did we do? \u2013 ${id} | Earthly Trinkets`,
     template: orderDeliveredEmail,
   },
+  order_cancelled: {
+    subject: (id) => `Order Cancelled \u2013 ${id} | Earthly Trinkets`,
+    template: orderCancelledEmail,
+  },
+  order_refunded: {
+    subject: (id) => `\u{1F4B0} Refund Processed \u2013 ${id} | Earthly Trinkets`,
+    template: orderRefundedEmail,
+  },
 };
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -524,10 +666,23 @@ serve(async (req) => {
     const body = await req.json();
     const { event, orderId, name, email: directEmail } = body;
 
-    // ── Welcome email (no order needed) ──
+    // ── Non-order emails (welcome, password) ──
     if (event === "welcome") {
       if (!directEmail) throw new Error("email required for welcome event");
       await sendEmail(directEmail, "Welcome to Earthly Trinkets! \u{1F33F}", welcomeEmail(name ?? ""));
+      return new Response(JSON.stringify({ success: true }), { headers: CORS });
+    }
+
+    if (event === "password_reset") {
+      if (!directEmail) throw new Error("email required for password_reset");
+      const resetLink = body.resetLink ?? `${SITE_URL}`;
+      await sendEmail(directEmail, "\u{1F512} Reset Your Password | Earthly Trinkets", passwordResetEmail(name ?? "", resetLink));
+      return new Response(JSON.stringify({ success: true }), { headers: CORS });
+    }
+
+    if (event === "password_changed") {
+      if (!directEmail) throw new Error("email required for password_changed");
+      await sendEmail(directEmail, "\u2705 Password Updated | Earthly Trinkets", passwordChangedEmail(name ?? ""));
       return new Response(JSON.stringify({ success: true }), { headers: CORS });
     }
 

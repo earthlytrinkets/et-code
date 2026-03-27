@@ -96,6 +96,8 @@ const STATUS_EMAIL_EVENT: Partial<Record<OrderStatus, string>> = {
   shipped:          "order_shipped",
   out_for_delivery: "order_out_for_delivery",
   delivered:        "order_delivered",
+  cancelled:        "order_cancelled",
+  refunded:         "order_refunded",
 };
 
 const sendStatusEmail = (orderId: string, status: OrderStatus) => {

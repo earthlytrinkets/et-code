@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
       shipped: "order_shipped",
       out_for_delivery: "order_out_for_delivery",
       delivered: "order_delivered",
+      cancelled: "order_cancelled",
     };
     const emailEvent = STATUS_EMAIL_EVENT[newStatus];
     if (emailEvent) {
