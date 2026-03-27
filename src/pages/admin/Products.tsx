@@ -526,20 +526,20 @@ export const AdminProductsSection = () => {
         </div>
       ) : (
         <div className="overflow-x-auto overflow-y-auto max-h-[60vh] rounded-2xl border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/40 text-left">
-                <th className="px-3 py-3 w-8" />
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Product</th>
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Category</th>
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Price</th>
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Stock</th>
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={displayRows.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={displayRows.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/40 text-left">
+                    <th className="px-3 py-3 w-8" />
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Product</th>
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Category</th>
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Price</th>
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Stock</th>
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="px-4 py-3 font-body text-xs font-semibold text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
                 <tbody className="divide-y divide-border">
                   {displayRows.map((p) => (
                     <SortableRow
@@ -551,9 +551,9 @@ export const AdminProductsSection = () => {
                     />
                   ))}
                 </tbody>
-              </SortableContext>
-            </DndContext>
-          </table>
+              </table>
+            </SortableContext>
+          </DndContext>
 
           {products.length === 0 && (
             <div className="py-16 text-center font-body text-muted-foreground">

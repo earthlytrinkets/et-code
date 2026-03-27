@@ -98,6 +98,7 @@ const CheckoutPayment = () => {
     shipping_address: {
       full_name: selectedAddress!.full_name,
       phone: selectedAddress!.phone,
+      email: user!.email ?? "",
       line1: selectedAddress!.line1,
       line2: selectedAddress!.line2 ?? undefined,
       city: selectedAddress!.city,
@@ -207,7 +208,7 @@ const CheckoutPayment = () => {
                 price:      i.product.price,
                 quantity:   i.quantity,
               })),
-              shippingAddress: selectedAddress,
+              shippingAddress: { ...selectedAddress, email: user!.email ?? "" },
               totalAmount:     finalTotal,
             }),
           });

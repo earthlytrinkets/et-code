@@ -39,6 +39,7 @@ type Order = {
   shipping_address: {
     full_name: string;
     phone: string;
+    email?: string;
     line1: string;
     line2?: string;
     city: string;
@@ -109,7 +110,10 @@ const SR_TOKEN_KEY = "et_shiprocket_token";
 
 const callShiprocket = async (body: Record<string, unknown>) => {
   const { data, error } = await supabase.functions.invoke("shiprocket", { body });
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("Shiprocket API error:", data ?? error);
+    throw new Error(data?.message || data?.error || error.message);
+  }
   return data;
 };
 
@@ -177,7 +181,7 @@ const OrderRow = ({ order }: { order: Order }) => {
         order: {
           order_id: order.id.slice(0, 20),
           order_date: new Date().toISOString().slice(0, 10),
-          pickup_location: "Primary",
+          pickup_location: "warehouse",
           billing_customer_name: addr.full_name,
           billing_last_name: "",
           billing_address: addr.line1,
@@ -187,7 +191,7 @@ const OrderRow = ({ order }: { order: Order }) => {
           billing_pincode: addr.pincode,
           billing_country: "India",
           billing_phone: addr.phone,
-          billing_email: order.profiles?.full_name ?? "customer@example.com",
+          billing_email: addr.email || "customer@example.com",
           shipping_is_billing: true,
           order_items: order.order_items.map((i) => ({
             name: i.product_name,

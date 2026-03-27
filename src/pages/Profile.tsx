@@ -29,6 +29,7 @@ import {
   Package,
   LayoutDashboard,
   Truck,
+  MapPinned,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -543,6 +544,155 @@ const AddressesSection = ({
   );
 };
 
+// ─── Shiprocket Live Tracking ─────────────────────────────────────────────────
+
+type TrackingActivity = {
+  date: string;
+  activity: string;
+  location: string;
+  sr_status: string;
+};
+
+type TrackingData = {
+  tracking_data?: {
+    track_status: number;
+    shipment_status: number;
+    shipment_track: { current_status: string; delivered_date?: string; edd?: string }[];
+    shipment_track_activities: TrackingActivity[];
+    error?: string;
+  };
+  // Shiprocket may nest differently
+  [key: string]: unknown;
+};
+
+const ShiprocketTracker = ({ awb, shippingMethod }: { awb: string; shippingMethod: string | null }) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tracking, setTracking] = useState<TrackingData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTracking = async () => {
+    if (shippingMethod !== "shiprocket") {
+      // For personal couriers, we can't fetch live tracking
+      setOpen(!open);
+      return;
+    }
+    if (tracking) { setOpen(!open); return; }
+
+    setOpen(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("shiprocket", {
+        body: { action: "track", awb },
+      });
+      if (fnErr) throw new Error(fnErr.message);
+      if (data?.tracking_data?.error) throw new Error(data.tracking_data.error);
+      setTracking(data);
+    } catch (e) {
+      setError(String(e));
+    }
+    setLoading(false);
+  };
+
+  const track = tracking?.tracking_data;
+  const currentStatus = track?.shipment_track?.[0]?.current_status;
+  const edd = track?.shipment_track?.[0]?.edd;
+  const activities = track?.shipment_track_activities ?? [];
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex items-center gap-2">
+        <Truck size={12} className="text-primary" />
+        <span className="font-body text-xs text-muted-foreground">AWB:</span>
+        <span className="font-body text-xs font-semibold text-foreground">{awb}</span>
+        {shippingMethod === "shiprocket" && (
+          <button
+            onClick={fetchTracking}
+            className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 font-body text-[10px] font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            {loading ? <Loader2 size={10} className="animate-spin" /> : <MapPinned size={10} />}
+            {open && tracking ? "Hide Tracking" : "Track Shipment"}
+          </button>
+        )}
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2 py-3">
+                <Loader2 size={14} className="animate-spin text-primary" />
+                <span className="font-body text-xs text-muted-foreground">Fetching live tracking…</span>
+              </div>
+            ) : error ? (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 px-3 py-2">
+                <p className="font-body text-xs text-red-600 dark:text-red-400">Could not fetch tracking: {error}</p>
+              </div>
+            ) : shippingMethod !== "shiprocket" ? (
+              <div className="rounded-lg bg-secondary/60 px-3 py-2">
+                <p className="font-body text-xs text-muted-foreground">Live tracking is not available for personal couriers. Contact the seller for updates.</p>
+              </div>
+            ) : track ? (
+              <div className="rounded-lg border border-border bg-secondary/30 p-3 space-y-3">
+                {/* Current status */}
+                {currentStatus && (
+                  <div className="flex items-center justify-between">
+                    <p className="font-body text-xs font-semibold text-foreground">{currentStatus}</p>
+                    {edd && (
+                      <p className="font-body text-[10px] text-muted-foreground">
+                        EDD: {new Date(edd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Activity timeline */}
+                {activities.length > 0 && (
+                  <div className="relative space-y-0">
+                    {activities.slice(0, 8).map((a, idx) => (
+                      <div key={idx} className="relative flex gap-3 pb-3 last:pb-0">
+                        {/* Timeline line */}
+                        {idx < Math.min(activities.length, 8) - 1 && (
+                          <div className="absolute left-[5px] top-[14px] bottom-0 w-px bg-border" />
+                        )}
+                        {/* Dot */}
+                        <div className={`relative z-10 mt-1 h-[11px] w-[11px] shrink-0 rounded-full border-2 ${
+                          idx === 0 ? "border-primary bg-primary" : "border-border bg-background"
+                        }`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-body text-[11px] font-medium text-foreground leading-tight">{a.activity}</p>
+                          <p className="font-body text-[10px] text-muted-foreground mt-0.5">
+                            {a.location && <>{a.location} · </>}
+                            {new Date(a.date).toLocaleString("en-IN", {
+                              day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {activities.length > 8 && (
+                      <p className="font-body text-[10px] text-muted-foreground pl-6">
+                        +{activities.length - 8} earlier updates
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 // ─── Orders Section ───────────────────────────────────────────────────────────
 
 const ORDER_STATUS_STYLE: Record<string, string> = {
@@ -813,11 +963,7 @@ const OrdersSection = ({ userId }: { userId: string }) => {
                             <p className="font-body text-[11px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5">Payment & Shipping</p>
                             <p className="font-body text-xs text-foreground">{order.payment_method === "cod" ? "Cash on Delivery" : "Paid Online (Razorpay)"}</p>
                             {order.shiprocket_awb ? (
-                              <div className="mt-2 flex items-center gap-1.5 font-body text-xs">
-                                <Truck size={12} className="text-primary" />
-                                <span className="text-muted-foreground">AWB:</span>
-                                <span className="font-semibold text-foreground">{order.shiprocket_awb}</span>
-                              </div>
+                              <ShiprocketTracker awb={order.shiprocket_awb} shippingMethod={order.shipping_method} />
                             ) : (
                               <p className="mt-1 font-body text-xs text-muted-foreground">Tracking not yet assigned</p>
                             )}

@@ -1,7 +1,7 @@
 // Supabase Edge Function — Shiprocket API proxy
 // Avoids CORS by proxying calls server-side.
 //
-// Deploy: supabase functions deploy shiprocket
+// Deploy: supabase functions deploy shiprocket --project-ref abymyaohtxrbaiiyoyak
 //
 // Expected request body: { action: string, ...payload }
 // Supported actions:
