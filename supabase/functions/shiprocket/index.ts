@@ -1,16 +1,35 @@
+// @ts-nocheck
 // Supabase Edge Function — Shiprocket API proxy
 // Avoids CORS by proxying calls server-side.
 //
 // Deploy: supabase functions deploy shiprocket --project-ref abymyaohtxrbaiiyoyak
+//
+// Required secrets for auto-auth (tracking):
+//   SHIPROCKET_EMAIL, SHIPROCKET_PASSWORD
 //
 // Expected request body: { action: string, ...payload }
 // Supported actions:
 //   "login"        → { email, password }
 //   "create_order" → { token, order: ShiprocketOrderPayload }
 //   "assign_awb"   → { token, shipment_id }
-//   "track"        → { token, awb }
+//   "track"        → { awb }  (auto-authenticates server-side)
 
 const SHIPROCKET_BASE = "https://apiv2.shiprocket.in/v1/external";
+
+// Auto-login using server-side credentials (for actions that don't have a client token)
+async function getServerToken(): Promise<string | null> {
+  const email = Deno.env.get("SHIPROCKET_EMAIL");
+  const password = Deno.env.get("SHIPROCKET_PASSWORD");
+  if (!email || !password) return null;
+
+  const res = await fetch(`${SHIPROCKET_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  return data?.token ?? null;
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -41,6 +60,10 @@ Deno.serve(async (req) => {
     } else if (action === "track") {
       srUrl = `${SHIPROCKET_BASE}/courier/track/awb/${payload.awb}`;
       srBody = undefined; // GET request
+      // Auto-auth for tracking (users don't have a Shiprocket token)
+      if (!token) {
+        token = await getServerToken() ?? undefined;
+      }
     } else {
       return new Response(JSON.stringify({ error: "Unknown action" }), {
         status: 400,
