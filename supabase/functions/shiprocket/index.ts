@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
       if (!token) {
         token = await getServerToken() ?? undefined;
       }
+      console.log("get_order URL:", srUrl, "token:", token ? "present" : "missing");
     } else if (action === "track") {
       srUrl = `${SHIPROCKET_BASE}/courier/track/awb/${payload.awb}`;
       srBody = undefined; // GET request
@@ -87,6 +88,9 @@ Deno.serve(async (req) => {
     });
 
     const data = await srRes.json();
+    if (action === "get_order") {
+      console.log("Shiprocket get_order response status:", srRes.status, "body:", JSON.stringify(data).slice(0, 500));
+    }
     return new Response(JSON.stringify(data), {
       status: srRes.status,
       headers: { ...cors, "Content-Type": "application/json" },
