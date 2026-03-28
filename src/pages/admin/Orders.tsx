@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Package, Truck, Send } from "lucide-react";
+import { ChevronDown, ChevronRight, Package, Truck, Send, RefreshCw } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -389,13 +389,44 @@ const OrderRow = ({ order }: { order: Order }) => {
                       ) : (
                         <>
                           <p className="font-body text-xs text-muted-foreground">
-                            Assign a courier in the Shiprocket dashboard, then enter the AWB below to mark shipped.
+                            Assign a courier in the Shiprocket dashboard, then sync or enter the AWB below.
                           </p>
+                          <div className="flex flex-col gap-2 sm:flex-row">
+                            <button
+                              onClick={async () => {
+                                setSrLoading(true);
+                                try {
+                                  const res = await callShiprocket({
+                                    action: "get_order",
+                                    sr_order_id: order.shiprocket_order_id,
+                                  });
+                                  const shipments = res?.data?.shipments ?? res?.shipments ?? [];
+                                  const awb = shipments[0]?.awb ?? shipments[0]?.awb_code ?? null;
+                                  if (awb) {
+                                    await updateOrder.mutateAsync({
+                                      status: "shipped",
+                                      shiprocket_awb: String(awb),
+                                    } as never);
+                                    toast.success(`AWB synced: ${awb}`);
+                                  } else {
+                                    toast.error("No AWB found — courier may not be assigned yet in Shiprocket.");
+                                  }
+                                } catch {
+                                  toast.error("Failed to sync from Shiprocket");
+                                }
+                                setSrLoading(false);
+                              }}
+                              disabled={srLoading || updateOrder.isPending}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-secondary px-4 py-2 font-body text-xs font-semibold text-foreground hover:bg-secondary/80 disabled:opacity-50 shrink-0"
+                            >
+                              <RefreshCw size={12} className={srLoading ? "animate-spin" : ""} /> Sync from Shiprocket
+                            </button>
+                          </div>
                           <div className="flex flex-col gap-2 sm:flex-row">
                             <input
                               value={trackingInput}
                               onChange={(e) => setTrackingInput(e.target.value)}
-                              placeholder="Enter AWB from Shiprocket"
+                              placeholder="Or enter AWB manually"
                               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
                             />
                             <button

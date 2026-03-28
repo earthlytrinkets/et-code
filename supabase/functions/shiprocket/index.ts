@@ -57,6 +57,12 @@ Deno.serve(async (req) => {
     } else if (action === "assign_awb") {
       srUrl = `${SHIPROCKET_BASE}/courier/assign/awb`;
       srBody = { shipment_id: payload.shipment_id };
+    } else if (action === "get_order") {
+      srUrl = `${SHIPROCKET_BASE}/orders/show/${payload.sr_order_id}`;
+      srBody = undefined; // GET request
+      if (!token) {
+        token = await getServerToken() ?? undefined;
+      }
     } else if (action === "track") {
       srUrl = `${SHIPROCKET_BASE}/courier/track/awb/${payload.awb}`;
       srBody = undefined; // GET request
