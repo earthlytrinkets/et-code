@@ -224,34 +224,14 @@ const OrderRow = ({ order }: { order: Order }) => {
 
       if (!srOrder?.shipment_id) { toast.error("Shiprocket order creation failed"); setSrLoading(false); return; }
 
-      // Save Shiprocket order/shipment IDs immediately
+      // Save Shiprocket order/shipment IDs
       await updateOrder.mutateAsync({
         status: "processing",
         shipping_method: "shiprocket",
         shiprocket_order_id: String(srOrder.order_id),
       } as never);
 
-      // Auto-assign courier + AWB via Shiprocket API
-      try {
-        const awbRes = await callShiprocket({
-          action: "assign_awb",
-          token: srToken,
-          shipment_id: srOrder.shipment_id,
-        });
-
-        const awb = awbRes?.response?.data?.awb_code;
-        if (awb) {
-          await updateOrder.mutateAsync({
-            status: "shipped",
-            shiprocket_awb: String(awb),
-          } as never);
-          toast.success(`Shipment created — AWB: ${awb}`);
-        } else {
-          toast.success("Shiprocket order created. AWB not auto-assigned — assign a courier in the Shiprocket dashboard, then enter the AWB here.");
-        }
-      } catch {
-        toast.success("Shiprocket order created. Auto-AWB assignment failed — assign a courier in the Shiprocket dashboard, then enter the AWB here.");
-      }
+      toast.success("Shiprocket order created — AWB will auto-update when you assign a courier in Shiprocket.");
     } catch (e) { toast.error(`Shiprocket error: ${String(e)}`); }
     setSrLoading(false);
   };

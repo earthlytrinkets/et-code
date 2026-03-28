@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Supabase Edge Function — Shiprocket Webhook Receiver
 //
 // Shiprocket sends POST requests here whenever a shipment status changes.
@@ -21,23 +22,30 @@ const cors = {
 // Map Shiprocket's current_status to our order_status enum.
 // Reference: https://apidocs.shiprocket.in/#b54833c2-7dbc-4a09-b8a0-dcb6737b8fd5
 const SR_STATUS_MAP: Record<string, string> = {
+  // AWB Assigned / Ready to Ship
+  "1":  "processing",     // AWB Assigned (Ready to Ship)
+
   // Pickup
+  "2":  "processing",     // Picked Up
   "6":  "processing",     // Shipped — Pickup Scheduled
   "7":  "processing",     // Shipped — Pickup Error
   "42": "processing",     // Shipped — Pickup Rescheduled
 
   // In Transit
+  "3":  "shipped",        // In Transit
   "18": "shipped",        // Shipped — In Transit
   "38": "shipped",        // Shipped — Reached at Destination Hub
   "48": "shipped",        // Shipped — In Transit — Shipment Out for Delivery
 
   // Out for Delivery
   "17": "out_for_delivery", // Shipped — Out for Delivery
+  "19": "out_for_delivery", // Shipped — Out for Delivery (alternate)
 
   // Delivered
   "8":  "delivered",      // Shipped — Delivered
 
   // RTO / Cancelled
+  "5":  "cancelled",      // Cancelled
   "9":  "cancelled",      // Shipped — Undelivered
   "14": "cancelled",      // RTO Initiated
   "15": "cancelled",      // RTO Delivered
@@ -96,11 +104,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Always save AWB if present, even for unmapped statuses
+    if (awb && !order.shiprocket_awb) {
+      await supabase.from("orders").update({ shiprocket_awb: awb }).eq("id", order.id);
+      console.log(`AWB ${awb} saved for order ${order.id}`);
+    }
+
     // Map Shiprocket status to our status
     const newStatus = SR_STATUS_MAP[statusId];
     if (!newStatus) {
       console.log("Unmapped Shiprocket status_id:", statusId, "current_status:", payload.current_status);
-      return new Response(JSON.stringify({ ok: true, skipped: "unmapped status" }), {
+      return new Response(JSON.stringify({ ok: true, awbSaved: !!awb, skipped: "unmapped status" }), {
         status: 200,
         headers: { ...cors, "Content-Type": "application/json" },
       });
@@ -120,9 +134,6 @@ Deno.serve(async (req) => {
 
     // Build update
     const update: Record<string, unknown> = { status: newStatus };
-    if (awb && !order.shiprocket_awb) {
-      update.shiprocket_awb = awb;
-    }
 
     const { error: updateErr } = await supabase
       .from("orders")
