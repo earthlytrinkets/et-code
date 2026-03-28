@@ -19,6 +19,7 @@ type OrderStatus =
 
 type OrderItem = {
   id: string;
+  product_id: string | null;
   product_name: string;
   product_image: string | null;
   price: number;
@@ -135,6 +136,20 @@ const OrderRow = ({ order }: { order: Order }) => {
     mutationFn: async (patch: Partial<Order>) => {
       const { error } = await supabase.from("orders").update(patch as never).eq("id", order.id);
       if (error) throw error;
+
+      // Restore stock when order is cancelled or refunded
+      const newStatus = (patch as Partial<Order>).status;
+      const restoreStatuses: OrderStatus[] = ["cancelled", "refunded"];
+      if (newStatus && restoreStatuses.includes(newStatus) && !restoreStatuses.includes(order.status)) {
+        for (const item of order.order_items) {
+          if (item.product_id) {
+            await supabase.rpc("increment_product_stock", {
+              p_product_id: item.product_id,
+              p_quantity: item.quantity,
+            });
+          }
+        }
+      }
     },
     onSuccess: (_, patch) => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });

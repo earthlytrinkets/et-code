@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Find the order in our DB by shiprocket_order_id
     const { data: order, error: findErr } = await supabase
       .from("orders")
-      .select("id, status, shiprocket_awb")
+      .select("id, status, shiprocket_awb, order_items(product_id, quantity)")
       .eq("shiprocket_order_id", srOrderId)
       .maybeSingle();
 
@@ -135,6 +135,21 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
       });
+    }
+
+    // Restore stock for cancelled/RTO orders
+    if (newStatus === "cancelled" && order.order_items?.length) {
+      for (const item of order.order_items) {
+        if (item.product_id) {
+          await supabase.rpc("increment_product_stock", {
+            p_product_id: item.product_id,
+            p_quantity: item.quantity,
+          }).then(({ error: stockErr }) => {
+            if (stockErr) console.error("Stock restore failed:", item.product_id, stockErr);
+          });
+        }
+      }
+      console.log(`Stock restored for cancelled order ${order.id}`);
     }
 
     // Trigger email notification

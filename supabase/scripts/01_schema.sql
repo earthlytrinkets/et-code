@@ -119,6 +119,25 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO authenticated;
 
+-- Atomically increment stock when an order is cancelled or returned.
+CREATE OR REPLACE FUNCTION public.increment_product_stock(
+  p_product_id uuid,
+  p_quantity   integer
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.products
+     SET stock = stock + p_quantity
+   WHERE id = p_product_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO service_role;
+
 
 -- ─── Addresses ────────────────────────────────────────────────────────────────
 
