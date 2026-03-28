@@ -400,13 +400,11 @@ const OrderRow = ({ order }: { order: Order }) => {
                                     action: "get_order",
                                     sr_order_id: order.shiprocket_order_id,
                                   });
-                                  console.log("Sync response:", JSON.stringify(res));
-                                  // Try all known Shiprocket response shapes
-                                  const shipments = res?.data?.shipments ?? res?.shipments ?? [];
-                                  const awb = shipments[0]?.awb ?? shipments[0]?.awb_code
-                                    ?? res?.data?.awb_code ?? res?.awb_code
-                                    ?? res?.data?.shipment_track?.[0]?.awb_code
-                                    ?? null;
+                                  // Extract AWB from Shiprocket response
+                                  // shipments can be an object or an array
+                                  const shipments = res?.data?.shipments ?? res?.shipments;
+                                  const firstShipment = Array.isArray(shipments) ? shipments[0] : shipments;
+                                  const awb = firstShipment?.awb ?? firstShipment?.awb_code ?? null;
                                   if (awb) {
                                     await updateOrder.mutateAsync({
                                       status: "shipped",
