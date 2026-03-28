@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: existing } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url")
+      .select("id, full_name, avatar_url, created_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -36,6 +36,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }).catch(console.error);
       }
     } else {
+      // Profile auto-created by handle_new_user() trigger — detect new user
+      // by checking if the profile was created within the last 10 seconds
+      const isNewUser = (Date.now() - new Date(existing.created_at).getTime()) < 10_000;
+      if (isNewUser && user.email) {
+        supabase.functions.invoke("send-order-email", {
+          body: { event: "welcome", email: user.email, name: name ?? "" },
+        }).catch(console.error);
+      }
+
       // Only fill fields the user hasn't already customised
       const updates: Record<string, string | undefined> = {};
       if (!existing.full_name && name) updates.full_name = name;
