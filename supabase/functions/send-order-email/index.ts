@@ -610,7 +610,12 @@ async function sendEmail(to: string, subject: string, html: string) {
     },
     body: JSON.stringify({ from: `Earthly Trinkets <${FROM_EMAIL}>`, to, subject, html }),
   });
-  if (!res.ok) console.error("Resend error:", await res.text());
+  const resBody = await res.text();
+  if (!res.ok) {
+    console.error("Resend error:", res.status, resBody);
+    throw new Error(`Resend failed (${res.status}): ${resBody}`);
+  }
+  console.log("Resend success:", resBody);
 }
 
 // ─── Event routing ────────────────────────────────────────────────────────────

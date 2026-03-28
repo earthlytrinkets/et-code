@@ -142,6 +142,9 @@ const CheckoutPayment = () => {
     if (err || !data) { setError("Failed to place order. Please try again."); setPlacing(false); return; }
     await createOrderItems(data.id);
     await decrementStock();
+    supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId: data.id } })
+      .then(({ data: d, error: e }) => console.log("order_placed email response:", d, e))
+      .catch((err) => console.error("order_placed email error:", err));
     clearCart();
     clearCheckout();
     navigate(`/checkout/success?orderId=${data.id}`);
@@ -215,6 +218,7 @@ const CheckoutPayment = () => {
           if (!verifyRes.ok) throw new Error("verify failed");
           const { orderId } = await verifyRes.json();
           await decrementStock();
+          supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId } }).catch(console.error);
           clearCart();
           clearCheckout();
           navigate(`/checkout/success?orderId=${orderId}`);
