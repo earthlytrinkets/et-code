@@ -33,13 +33,21 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
     };
-    if (userMenuOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+
+    if (userMenuOpen) {
+      document.addEventListener("mousedown", handler);
+      document.addEventListener("touchstart", handler);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [userMenuOpen]);
 
   useEffect(() => {
