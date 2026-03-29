@@ -21,6 +21,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import BackToTop from "@/components/BackToTop";
 import SplashScreen from "@/components/SplashScreen";
+import Unsubscribed from "./pages/Unsubscribed";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import CheckoutAddress from "./pages/checkout/Address";
@@ -60,6 +61,7 @@ const App = () => {
                       <Route path="/custom-orders" element={<CustomOrders />} />
                       <Route path="/contact" element={<Contact />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/unsubscribed" element={<Unsubscribed />} />
 
                       {/* Authenticated users */}
                       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
