@@ -29,9 +29,17 @@ const Footer = () => (
         <div>
           <h4 className="font-display text-sm font-semibold text-foreground">Shop</h4>
           <ul className="mt-3 space-y-2">
-            {["Jewellery", "Paperweights", "Home Decor", "Custom Pieces"].map((item) => (
-              <li key={item}>
-                <Link to="/shop" className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{item}</Link>
+            {[
+              ["Rings", "/shop?category=rings"],
+              ["Earrings", "/shop?category=earrings"],
+              ["Necklaces", "/shop?category=necklaces"],
+              ["Pendants", "/shop?category=pendants"],
+              ["Paperweights", "/shop?category=paperweights"],
+              ["Home Decor", "/shop?category=home-decor"],
+              ["Keychains", "/shop?category=keychains"],
+            ].map(([label, to]) => (
+              <li key={label}>
+                <Link to={to} className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{label}</Link>
               </li>
             ))}
           </ul>
@@ -40,7 +48,11 @@ const Footer = () => (
         <div>
           <h4 className="font-display text-sm font-semibold text-foreground">Company</h4>
           <ul className="mt-3 space-y-2">
-            {[["About", "/"], ["Custom Orders", "/custom-orders"], ["Contact", "/contact"]].map(([label, to]) => (
+            {[
+              ["About Us", "/"],
+              ["Custom Orders", "/custom-orders"],
+              ["Contact", "/contact"],
+            ].map(([label, to]) => (
               <li key={label}>
                 <Link to={to} className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{label}</Link>
               </li>
@@ -51,9 +63,14 @@ const Footer = () => (
         <div>
           <h4 className="font-display text-sm font-semibold text-foreground">Help</h4>
           <ul className="mt-3 space-y-2">
-            {["Shipping & Returns", "Care Instructions", "FAQ", "Privacy Policy"].map((item) => (
-              <li key={item}>
-                <Link to="/contact" className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{item}</Link>
+            {[
+              ["Shipping & Returns", "/shipping-returns"],
+              ["Care Instructions", "/care-instructions"],
+              ["FAQ", "/faq"],
+              ["Privacy Policy", "/privacy-policy"],
+            ].map(([label, to]) => (
+              <li key={label}>
+                <Link to={to} className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{label}</Link>
               </li>
             ))}
           </ul>
