@@ -73,14 +73,9 @@ function buildEmail(headerRow: string, bodyContent: string, unsubEmail: string) 
           <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:15px;color:${C.text}">
             <span style="color:${C.green}">Earthly</span> Trinkets
           </p>
-          <p style="margin:0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.8">
+          <p style="margin:0 0 10px;font-size:12px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.8">
             &copy; 2026 Earthly Trinkets &middot; Made with &hearts; in India
           </p>
-        </td></tr>
-      </table>
-
-      <table width="100%" style="max-width:580px" cellpadding="0" cellspacing="0">
-        <tr><td style="text-align:center;padding:18px 0 0">
           <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#b8a898">
             You're receiving this because you subscribed to Earthly Trinkets updates.<br>
             <a href="https://abymyaohtxrbaiiyoyak.supabase.co/functions/v1/unsubscribe?email=${encodeURIComponent(unsubEmail)}" style="color:${C.muted};text-decoration:underline">Unsubscribe</a>
