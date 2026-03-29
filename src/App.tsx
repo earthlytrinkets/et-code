@@ -9,11 +9,16 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CheckoutProvider } from "@/contexts/CheckoutContext";
 import Index from "./pages/Index";
+import About from "./pages/About";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import CustomOrders from "./pages/CustomOrders";
 import Contact from "./pages/Contact";
+import ShippingReturns from "./pages/ShippingReturns";
+import CareInstructions from "./pages/CareInstructions";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -64,11 +69,16 @@ const App = () => {
                     <Routes>
                       {/* Public */}
                       <Route path="/" element={<Index />} />
+                      <Route path="/about" element={<About />} />
                       <Route path="/shop" element={<Shop />} />
                       <Route path="/product/:slug" element={<ProductDetail />} />
                       <Route path="/cart" element={<Cart />} />
                       <Route path="/custom-orders" element={<CustomOrders />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/shipping-returns" element={<ShippingReturns />} />
+                      <Route path="/care-instructions" element={<CareInstructions />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/unsubscribed" element={<Unsubscribed />} />
 

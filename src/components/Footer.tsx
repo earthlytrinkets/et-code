@@ -30,13 +30,10 @@ const Footer = () => (
           <h4 className="font-display text-sm font-semibold text-foreground">Shop</h4>
           <ul className="mt-3 space-y-2">
             {[
-              ["Rings", "/shop?category=rings"],
-              ["Earrings", "/shop?category=earrings"],
-              ["Necklaces", "/shop?category=necklaces"],
-              ["Pendants", "/shop?category=pendants"],
+              ["Jewellery", "/shop?category=jewellery"],
               ["Paperweights", "/shop?category=paperweights"],
               ["Home Decor", "/shop?category=home-decor"],
-              ["Keychains", "/shop?category=keychains"],
+              ["Custom Pieces", "/shop?category=custom-pieces"],
             ].map(([label, to]) => (
               <li key={label}>
                 <Link to={to} className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{label}</Link>
@@ -49,7 +46,7 @@ const Footer = () => (
           <h4 className="font-display text-sm font-semibold text-foreground">Company</h4>
           <ul className="mt-3 space-y-2">
             {[
-              ["About Us", "/"],
+              ["About", "/about"],
               ["Custom Orders", "/custom-orders"],
               ["Contact", "/contact"],
             ].map(([label, to]) => (
