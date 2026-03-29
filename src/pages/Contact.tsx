@@ -54,11 +54,11 @@ const Contact = () => {
             )}
 
             <div className="mt-10 space-y-4">
-              <a href="mailto:hello@earthlytrinkets.com" className="flex items-center gap-3 font-body text-sm text-muted-foreground hover:text-foreground">
-                <Mail size={16} className="text-primary" /> hello@earthlytrinkets.com
+              <a href="mailto:business.earthlytrinkets@gmail.com" className="flex items-center gap-3 font-body text-sm text-muted-foreground hover:text-foreground">
+                <Mail size={16} className="text-primary" /> business.earthlytrinkets@gmail.com
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="flex items-center gap-3 font-body text-sm text-muted-foreground hover:text-foreground">
-                <Instagram size={16} className="text-primary" /> @earthlytrinkets
+              <a href="https://www.instagram.com/earthly.trinkets/" target="_blank" rel="noreferrer" className="flex items-center gap-3 font-body text-sm text-muted-foreground hover:text-foreground">
+                <Instagram size={16} className="text-primary" /> @earthly.trinkets
               </a>
               <div className="flex items-center gap-3 font-body text-sm text-muted-foreground">
                 <MapPin size={16} className="text-primary" /> Handcrafted in India

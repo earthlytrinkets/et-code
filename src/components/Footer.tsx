@@ -17,10 +17,10 @@ const Footer = () => (
             Handcrafted epoxy resin art inspired by nature, minimalism, and earthy aesthetics.
           </p>
           <div className="mt-4 flex gap-3">
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+            <a href="https://www.instagram.com/earthly.trinkets/" target="_blank" rel="noreferrer" className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
               <Instagram size={16} />
             </a>
-            <a href="mailto:hello@earthlytrinkets.com" className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+            <a href="mailto:business.earthlytrinkets@gmail.com" className="rounded-full bg-secondary p-2 text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
               <Mail size={16} />
             </a>
           </div>

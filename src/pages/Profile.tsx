@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AdminProductsSection } from "@/pages/admin/Products";
 import { AdminOrdersSection } from "@/pages/admin/Orders";
+import { AdminSubscribersSection } from "@/pages/admin/Subscribers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import {
   LayoutDashboard,
   Truck,
   MapPinned,
+  Mail,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -71,7 +73,7 @@ const emptyAddressForm: AddressFormData = {
   is_default: false,
 };
 
-type Section = "profile" | "addresses" | "orders" | "admin-products" | "admin-orders";
+type Section = "profile" | "addresses" | "orders" | "admin-products" | "admin-orders" | "admin-subscribers";
 
 // ─── Sidebar nav items ────────────────────────────────────────────────────────
 
@@ -988,6 +990,7 @@ const adminNavItems: { id: Section; label: string; icon: React.ElementType; desc
   { id: "profile",         label: "Account",  icon: User,            description: "Name, email & photo" },
   { id: "admin-products",  label: "Products", icon: Package,         description: "Manage catalogue" },
   { id: "admin-orders",    label: "Orders",   icon: LayoutDashboard, description: "Shop & custom orders" },
+  { id: "admin-subscribers", label: "Subscribers", icon: Mail, description: "Newsletter & notifications" },
 ];
 
 const ProfilePage = () => {
@@ -1199,6 +1202,7 @@ const ProfilePage = () => {
               {activeSection === "orders" && <OrdersSection userId={user!.id} />}
               {activeSection === "admin-products" && <AdminProductsSection />}
               {activeSection === "admin-orders" && <AdminOrdersSection />}
+              {activeSection === "admin-subscribers" && <AdminSubscribersSection />}
             </div>
           </div>
 

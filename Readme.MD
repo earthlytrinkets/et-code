@@ -13,8 +13,10 @@ E-commerce web app for **Earthly Trinkets** — a handcrafted resin art business
 | Routing | React Router DOM v6 |
 | State | React Context (Auth, Cart, Theme, Checkout) + TanStack React Query |
 | Forms | React Hook Form + Zod |
-| Backend/DB | Supabase (PostgreSQL + Auth + Storage) |
+| Backend/DB | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
 | Payments | Razorpay (with server-side verification) |
+| Shipping | Shiprocket (order creation, AWB tracking, webhooks) |
+| Email | Resend (transactional + newsletter) |
 | Serverless API | Vercel Serverless Functions |
 | Hosting | Vercel |
 
@@ -96,14 +98,21 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 └── vercel.json             # Vercel config + routing
 ```
 
+## Documentation
+
+- [Implementation Guide](docs/implementation.md) — project structure, database tables, key flows, environment variables
+- [Edge Functions Reference](docs/edge-functions.md) — all Supabase Edge Functions with deploy commands and secrets
+
 ## Database Setup
 
-Run the SQL scripts in `supabase/scripts/` in order (00 → 03) in the Supabase SQL Editor:
+Run the SQL scripts in `supabase/scripts/` in order (00 → 05) in the Supabase SQL Editor:
 
 1. `00_prerequisites.sql` — enums, extensions
 2. `01_schema.sql` — tables, RLS policies, functions
 3. `02_storage.sql` — product-images bucket + policies
 4. `03_admin_setup.sql` — admin role setup
+5. `04_test_user.sql` — test user for development
+6. `05_subscribers.sql` — newsletter subscribers table
 
 ## Deployment
 
