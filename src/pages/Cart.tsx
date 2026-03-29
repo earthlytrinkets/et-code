@@ -11,13 +11,9 @@ import AuthModal from "@/components/AuthModal";
 import { Minus, Plus, X, ShoppingBag, ArrowRight, Tag, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateCouponDiscount, type ManagedCoupon } from "@/lib/coupons";
 
-interface Coupon {
-  code: string;
-  discount_type: "percentage" | "flat";
-  discount_value: number;
-  min_order_value: number;
-}
+type Coupon = ManagedCoupon;
 
 const Cart = () => {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
@@ -34,11 +30,10 @@ const Cart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const couponMeetsMinimum = !appliedCoupon || totalPrice >= appliedCoupon.min_order_value;
 
   const discountAmount = appliedCoupon
-    ? appliedCoupon.discount_type === "percentage"
-      ? Math.round((totalPrice * appliedCoupon.discount_value) / 100)
-      : Math.min(appliedCoupon.discount_value, totalPrice)
+    ? calculateCouponDiscount(totalPrice, appliedCoupon)
     : 0;
   const finalTotal = totalPrice - discountAmount;
 
@@ -48,21 +43,27 @@ const Cart = () => {
     setCouponError("");
     setCouponLoading(true);
 
-    const { data, error } = await supabase
-      .from("coupons" as never)
-      .select("code, discount_type, discount_value, min_order_value, max_uses, uses_count, expires_at")
-      .eq("code", code)
-      .eq("is_active", true)
-      .maybeSingle() as { data: (Coupon & { max_uses: number | null; uses_count: number; expires_at: string | null }) | null; error: unknown };
+    const { data, error } = await supabase.rpc("validate_coupon_code", {
+      p_code: code,
+      p_user_id: user?.id ?? null,
+      p_subtotal: totalPrice,
+    });
 
     setCouponLoading(false);
 
-    if (error || !data) { setCouponError("Invalid or expired coupon code."); return; }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) { setCouponError("This coupon has expired."); return; }
-    if (data.max_uses !== null && data.uses_count >= data.max_uses) { setCouponError("This coupon has reached its usage limit."); return; }
-    if (totalPrice < data.min_order_value) { setCouponError(`Minimum order of ₹${data.min_order_value} required.`); return; }
+    const coupon = Array.isArray(data) ? data[0] : data;
+    if (error || !coupon) {
+      setCouponError(error?.message || "Invalid or expired coupon code.");
+      return;
+    }
 
-    setAppliedCoupon({ code: data.code, discount_type: data.discount_type, discount_value: data.discount_value, min_order_value: data.min_order_value });
+    setAppliedCoupon({
+      code: coupon.code,
+      discount_type: coupon.discount_type as Coupon["discount_type"],
+      discount_value: Number(coupon.discount_value),
+      min_order_value: Number(coupon.min_order_value),
+      max_discount_amount: coupon.max_discount_amount === null ? null : Number(coupon.max_discount_amount),
+    });
   };
 
   const removeCoupon = () => {
@@ -188,6 +189,11 @@ const Cart = () => {
                 </div>
               )}
               {couponError && <p className="mt-1.5 font-body text-xs text-destructive">{couponError}</p>}
+              {!couponError && appliedCoupon && !couponMeetsMinimum && (
+                <p className="mt-1.5 font-body text-xs text-destructive">
+                  Minimum order of ₹{appliedCoupon.min_order_value} required to keep this coupon applied.
+                </p>
+              )}
             </div>
 
             {/* Order Summary */}
@@ -218,6 +224,10 @@ const Cart = () => {
             <button
               onClick={() => {
                 if (!user) { setAuthModalOpen(true); return; }
+                if (appliedCoupon && !couponMeetsMinimum) {
+                  setCouponError(`Minimum order of ₹${appliedCoupon.min_order_value} required.`);
+                  return;
+                }
                 setCoupon(appliedCoupon, discountAmount);
                 navigate("/checkout/address");
               }}

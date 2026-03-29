@@ -1,12 +1,7 @@
+-- Generated from supabase/scripts/01_schema.sql
+
 -- ══════════════════════════════════════════════════════════════════════════════
 -- Earthly Trinkets — Full Database Schema
--- Run this in the Supabase SQL Editor (Dashboard → SQL Editor → New query)
---
--- Canonical manual setup order:
---   1. 00_prerequisites.sql  — profiles, user_roles, has_role(), triggers
---   2. 01_schema.sql         — this file (all product/order/review/subscriber tables)
---   3. 02_storage.sql        — storage buckets + policies
---   4. 03_admin_setup.sql    — grant admin role to a specific user
 -- ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -50,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   short_description TEXT,
   description       TEXT,
   price             NUMERIC(10,2) NOT NULL,
-  compare_at_price  NUMERIC(10,2),              -- original / strikethrough price
+  compare_at_price  NUMERIC(10,2),
   category_id       UUID          REFERENCES public.categories(id),
   images            TEXT[]        NOT NULL DEFAULT '{}',
   tags              TEXT[]        NOT NULL DEFAULT '{}',
@@ -60,34 +55,28 @@ CREATE TABLE IF NOT EXISTS public.products (
   is_active         BOOLEAN       NOT NULL DEFAULT true,
   is_featured       BOOLEAN       NOT NULL DEFAULT false,
   is_new            BOOLEAN       NOT NULL DEFAULT false,
-  is_coming_soon    BOOLEAN       NOT NULL DEFAULT false,  -- greyed out, not purchasable
-  display_order     INTEGER       NOT NULL DEFAULT 0,      -- controls order in featured section
-  rating            NUMERIC(3,2)  NOT NULL DEFAULT 0,      -- auto-maintained by reviews trigger
-  review_count      INTEGER       NOT NULL DEFAULT 0,      -- auto-maintained by reviews trigger
+  is_coming_soon    BOOLEAN       NOT NULL DEFAULT false,
+  display_order     INTEGER       NOT NULL DEFAULT 0,
+  rating            NUMERIC(3,2)  NOT NULL DEFAULT 0,
+  review_count      INTEGER       NOT NULL DEFAULT 0,
   created_at        TIMESTAMPTZ   NOT NULL DEFAULT now(),
   updated_at        TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
--- Anyone (including logged-out visitors) can browse active products
 CREATE POLICY "Anyone can view active products"
   ON public.products FOR SELECT
   USING (is_active = true);
 
--- Admins can create, update, and delete products
 CREATE POLICY "Admins can manage products"
   ON public.products FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin'::app_role));
 
--- Auto-update updated_at on every row change
 CREATE TRIGGER update_products_updated_at
   BEFORE UPDATE ON public.products
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
--- Atomically decrement stock after an order is confirmed.
--- Returns TRUE if stock was sufficient; FALSE if not (prevents overselling).
--- Uses FOR UPDATE row-lock so concurrent orders cannot both succeed on the last unit.
 CREATE OR REPLACE FUNCTION public.decrement_product_stock(
   p_product_id uuid,
   p_quantity   integer
@@ -118,7 +107,6 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO authenticated;
 
--- Atomically increment stock when an order is cancelled or returned.
 CREATE OR REPLACE FUNCTION public.increment_product_stock(
   p_product_id uuid,
   p_quantity   integer
@@ -143,7 +131,7 @@ GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO servi
 CREATE TABLE IF NOT EXISTS public.addresses (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  label      TEXT        NOT NULL DEFAULT 'Home',  -- Home | Work | Other
+  label      TEXT        NOT NULL DEFAULT 'Home',
   full_name  TEXT        NOT NULL,
   phone      TEXT        NOT NULL,
   line1      TEXT        NOT NULL,
@@ -166,16 +154,21 @@ CREATE POLICY "Users can manage own addresses"
 
 -- ─── Orders ───────────────────────────────────────────────────────────────────
 
-CREATE TYPE public.order_status AS ENUM (
-  'pending',          -- payment initiated but not confirmed
-  'confirmed',        -- payment verified / COD placed
-  'processing',       -- being packed
-  'shipped',          -- handed to courier, AWB assigned
-  'out_for_delivery', -- last-mile delivery
-  'delivered',        -- delivered to customer
-  'cancelled',
-  'refunded'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status' AND typnamespace = 'public'::regnamespace) THEN
+    CREATE TYPE public.order_status AS ENUM (
+      'pending',
+      'confirmed',
+      'processing',
+      'shipped',
+      'out_for_delivery',
+      'delivered',
+      'cancelled',
+      'refunded'
+    );
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.orders (
   id                  UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -188,7 +181,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   total               NUMERIC(10,2) NOT NULL,
   payment_method      TEXT          NOT NULL DEFAULT 'cod'
                         CHECK (payment_method IN ('razorpay', 'cod')),
-  shipping_address    JSONB         NOT NULL,   -- full address snapshot at order time
+  shipping_address    JSONB         NOT NULL,
   shipping_method     TEXT          CHECK (shipping_method IN ('personal', 'shiprocket')),
   razorpay_order_id   TEXT,
   razorpay_payment_id TEXT,
@@ -218,6 +211,7 @@ CREATE POLICY "Admins can manage orders"
   ON public.orders FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin'::app_role));
 
+DROP TRIGGER IF EXISTS update_orders_updated_at ON public.orders;
 CREATE TRIGGER update_orders_updated_at
   BEFORE UPDATE ON public.orders
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
@@ -229,9 +223,9 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   id            UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id      UUID          NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
   product_id    UUID          REFERENCES public.products(id) ON DELETE SET NULL,
-  product_name  TEXT          NOT NULL,   -- snapshot at time of order
-  product_image TEXT,                     -- snapshot — first image URL
-  price         NUMERIC(10,2) NOT NULL,   -- snapshot — price at time of purchase
+  product_name  TEXT          NOT NULL,
+  product_image TEXT,
+  price         NUMERIC(10,2) NOT NULL,
   quantity      INTEGER       NOT NULL,
   created_at    TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
@@ -242,17 +236,21 @@ CREATE POLICY "Users can view own order items"
   ON public.order_items FOR SELECT TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.orders
-      WHERE id = order_items.order_id AND user_id = auth.uid()
+      SELECT 1
+      FROM public.orders
+      WHERE orders.id = order_items.order_id
+        AND orders.user_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can insert own order items"
+CREATE POLICY "Users can create own order items"
   ON public.order_items FOR INSERT TO authenticated
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.orders
-      WHERE id = order_items.order_id AND user_id = auth.uid()
+      SELECT 1
+      FROM public.orders
+      WHERE orders.id = order_items.order_id
+        AND orders.user_id = auth.uid()
     )
   );
 
@@ -265,93 +263,116 @@ CREATE POLICY "Admins can manage order items"
 
 CREATE TABLE IF NOT EXISTS public.reviews (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   product_id UUID        NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
-  user_id    UUID        NOT NULL REFERENCES auth.users(id)      ON DELETE CASCADE,
   rating     INTEGER     NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment    TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (product_id, user_id)  -- one review per user per product
+  UNIQUE (user_id, product_id)
 );
-
--- FK to profiles so PostgREST can resolve the reviews→profiles join for author names
-ALTER TABLE public.reviews
-  DROP CONSTRAINT IF EXISTS reviews_user_profile_fkey;
-ALTER TABLE public.reviews
-  ADD CONSTRAINT reviews_user_profile_fkey
-  FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can read reviews"
-  ON public.reviews FOR SELECT USING (true);
+CREATE POLICY "Anyone can view reviews"
+  ON public.reviews FOR SELECT
+  USING (true);
 
-CREATE POLICY "Users can insert own review"
+CREATE POLICY "Users can create own reviews"
   ON public.reviews FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own review"
+CREATE POLICY "Users can update own reviews"
   ON public.reviews FOR UPDATE TO authenticated
-  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete own review"
+CREATE POLICY "Users can delete own reviews"
   ON public.reviews FOR DELETE TO authenticated
   USING (auth.uid() = user_id);
 
--- Trigger: keep products.rating + review_count in sync automatically
+CREATE POLICY "Admins can manage reviews"
+  ON public.reviews FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+DROP TRIGGER IF EXISTS update_reviews_updated_at ON public.reviews;
+CREATE TRIGGER update_reviews_updated_at
+  BEFORE UPDATE ON public.reviews
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
 CREATE OR REPLACE FUNCTION public.sync_product_rating()
-RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
-  _product_id UUID;
+  v_product_id UUID;
 BEGIN
-  _product_id := COALESCE(NEW.product_id, OLD.product_id);
+  v_product_id := COALESCE(NEW.product_id, OLD.product_id);
+
   UPDATE public.products
-     SET rating       = (SELECT COALESCE(ROUND(AVG(rating)::NUMERIC, 2), 0)
-                           FROM public.reviews WHERE product_id = _product_id),
-         review_count = (SELECT COUNT(*) FROM public.reviews WHERE product_id = _product_id)
-   WHERE id = _product_id;
-  RETURN NEW;
+  SET
+    rating = COALESCE((SELECT ROUND(AVG(rating)::numeric, 2) FROM public.reviews WHERE product_id = v_product_id), 0),
+    review_count = (SELECT COUNT(*) FROM public.reviews WHERE product_id = v_product_id)
+  WHERE id = v_product_id;
+
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_sync_product_rating ON public.reviews;
-CREATE TRIGGER trg_sync_product_rating
-  AFTER INSERT OR UPDATE OR DELETE ON public.reviews
+DROP TRIGGER IF EXISTS sync_product_rating_after_insert ON public.reviews;
+DROP TRIGGER IF EXISTS sync_product_rating_after_update ON public.reviews;
+DROP TRIGGER IF EXISTS sync_product_rating_after_delete ON public.reviews;
+
+CREATE TRIGGER sync_product_rating_after_insert
+  AFTER INSERT ON public.reviews
   FOR EACH ROW EXECUTE FUNCTION public.sync_product_rating();
 
--- RPC: get verified buyers (purchased this product in a confirmed+ order)
--- SECURITY DEFINER so it bypasses order_items RLS — returns only UUIDs, no PII
+CREATE TRIGGER sync_product_rating_after_update
+  AFTER UPDATE ON public.reviews
+  FOR EACH ROW EXECUTE FUNCTION public.sync_product_rating();
+
+CREATE TRIGGER sync_product_rating_after_delete
+  AFTER DELETE ON public.reviews
+  FOR EACH ROW EXECUTE FUNCTION public.sync_product_rating();
+
 CREATE OR REPLACE FUNCTION public.get_verified_buyers(p_product_id UUID)
-RETURNS TABLE(user_id UUID) LANGUAGE sql SECURITY DEFINER AS $$
+RETURNS TABLE (user_id UUID)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
   SELECT DISTINCT o.user_id
-  FROM   public.order_items oi
-  JOIN   public.orders o ON o.id = oi.order_id
-  WHERE  oi.product_id = p_product_id
-    AND  o.user_id IS NOT NULL
-    AND  o.status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered');
+  FROM public.orders o
+  JOIN public.order_items oi ON oi.order_id = o.id
+  WHERE oi.product_id = p_product_id
+    AND o.user_id IS NOT NULL
+    AND o.status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered');
 $$;
 
-GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO authenticated;
 
 
 -- ─── Custom Orders ────────────────────────────────────────────────────────────
--- Stores free-form customer enquiries submitted via the Custom Orders page
 
 CREATE TABLE IF NOT EXISTS public.custom_orders (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      UUID        REFERENCES public.profiles(id) ON DELETE SET NULL,
   name         TEXT        NOT NULL,
   email        TEXT        NOT NULL,
   description  TEXT        NOT NULL,
   budget_range TEXT,
-  status       TEXT        NOT NULL DEFAULT 'new'
-                 CHECK (status IN ('new', 'reviewed', 'contacted', 'closed')),
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  status       TEXT        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'quoted', 'accepted', 'rejected')),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.custom_orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can submit custom orders"
-  ON public.custom_orders FOR INSERT
+CREATE POLICY "Users can create custom orders"
+  ON public.custom_orders FOR INSERT TO authenticated
   WITH CHECK (true);
 
 CREATE POLICY "Admins can read custom orders"
@@ -361,6 +382,11 @@ CREATE POLICY "Admins can read custom orders"
 CREATE POLICY "Admins can update custom orders"
   ON public.custom_orders FOR UPDATE
   USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+DROP TRIGGER IF EXISTS update_custom_orders_updated_at ON public.custom_orders;
+CREATE TRIGGER update_custom_orders_updated_at
+  BEFORE UPDATE ON public.custom_orders
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 -- ─── Coupons ──────────────────────────────────────────────────────────────────
@@ -375,13 +401,13 @@ CREATE TABLE IF NOT EXISTS public.coupons (
                     AND (discount_type <> 'percentage' OR discount_value <= 100)
                   ),
   min_order_value NUMERIC(10,2) NOT NULL DEFAULT 0,
-  max_uses        INTEGER,           -- NULL = unlimited
+  max_uses        INTEGER,
   max_uses_per_user INTEGER CHECK (max_uses_per_user IS NULL OR max_uses_per_user > 0),
   uses_count      INTEGER       NOT NULL DEFAULT 0,
   is_active       BOOLEAN       NOT NULL DEFAULT true,
   first_order_only BOOLEAN      NOT NULL DEFAULT false,
-  starts_at       TIMESTAMPTZ,       -- NULL = active immediately
-  expires_at      TIMESTAMPTZ,       -- NULL = never expires
+  starts_at       TIMESTAMPTZ,
+  expires_at      TIMESTAMPTZ,
   max_discount_amount NUMERIC(10,2) CHECK (max_discount_amount IS NULL OR max_discount_amount > 0),
   created_at      TIMESTAMPTZ   NOT NULL DEFAULT now()
 );
@@ -534,7 +560,6 @@ BEGIN
 END;
 $$;
 
--- Sample coupons — remove or adjust before going live
 INSERT INTO public.coupons (code, description, discount_type, discount_value, min_order_value, max_uses, first_order_only, max_uses_per_user, max_discount_amount)
 VALUES
   ('WELCOME10', 'Welcome discount for new customers', 'percentage', 10,  0,    NULL, false, 1, NULL),
@@ -543,7 +568,7 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 
--- ─── Subscribers (Newsletter) ───────────────────────────────────────────────
+-- ─── Subscribers ──────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS public.subscribers (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -554,12 +579,10 @@ CREATE TABLE IF NOT EXISTS public.subscribers (
 
 ALTER TABLE public.subscribers ENABLE ROW LEVEL SECURITY;
 
--- Anyone can subscribe (insert)
 CREATE POLICY "Anyone can subscribe"
   ON public.subscribers FOR INSERT
   WITH CHECK (true);
 
--- Only admins can read subscribers
 CREATE POLICY "Admins can read subscribers"
   ON public.subscribers FOR SELECT
   USING (
@@ -570,7 +593,6 @@ CREATE POLICY "Admins can read subscribers"
     )
   );
 
--- Only admins can update subscribers (unsubscribe etc.)
 CREATE POLICY "Admins can update subscribers"
   ON public.subscribers FOR UPDATE
   USING (
@@ -581,7 +603,6 @@ CREATE POLICY "Admins can update subscribers"
     )
   );
 
--- Only admins can delete subscribers
 CREATE POLICY "Admins can delete subscribers"
   ON public.subscribers FOR DELETE
   USING (
@@ -591,6 +612,3 @@ CREATE POLICY "Admins can delete subscribers"
         AND user_roles.role = 'admin'::app_role
     )
   );
-
--- Service role (edge functions) can read/update for sending emails and unsubscribe
--- (service_role bypasses RLS by default, so no policy needed)

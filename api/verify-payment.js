@@ -1,11 +1,5 @@
 import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
-
-// Service-role client — bypasses RLS so we can insert orders server-side
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { createOrderWithPricing } from "./order-utils.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -17,9 +11,9 @@ export default async function handler(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     userId,
-    items,          // [{ product_id, name, price, quantity }]
+    items,
     shippingAddress,
-    totalAmount,
+    couponCode,
   } = req.body;
 
   // ── 1. Verify signature ──────────────────────────────────────────────────
@@ -35,43 +29,19 @@ export default async function handler(req, res) {
 
   // ── 2. Save order to Supabase ────────────────────────────────────────────
   try {
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        user_id:             userId,
-        status:              "confirmed",
-        subtotal:            totalAmount,
-        total:               totalAmount,
-        shipping_fee:        0,
-        discount_amount:     0,
-        payment_method:      "razorpay",
-        razorpay_order_id,
-        razorpay_payment_id,
-        shipping_address:    shippingAddress,
-      })
-      .select("id")
-      .single();
+    const order = await createOrderWithPricing({
+      userId,
+      rawItems: items,
+      shippingAddress,
+      paymentMethod: "razorpay",
+      couponCode,
+      razorpay_order_id,
+      razorpay_payment_id,
+    });
 
-    if (orderError) throw orderError;
-
-    const orderItems = items.map((item) => ({
-      order_id:      order.id,
-      product_id:    item.product_id,
-      product_name:  item.name,
-      product_image: item.image ?? null,
-      price:         item.price,
-      quantity:      item.quantity,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
-    if (itemsError) throw itemsError;
-
-    return res.status(200).json({ success: true, orderId: order.id });
+    return res.status(200).json({ success: true, orderId: order.orderId });
   } catch (err) {
     console.error("verify-payment DB error:", err);
-    return res.status(500).json({ error: "Payment verified but failed to save order" });
+    return res.status(500).json({ error: err.message || "Payment verified but failed to save order" });
   }
 }

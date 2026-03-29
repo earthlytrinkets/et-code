@@ -29,6 +29,7 @@ import SplashScreen from "@/components/SplashScreen";
 import Unsubscribed from "./pages/Unsubscribed";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
+import AdminCoupons from "./pages/admin/Coupons";
 import CheckoutAddress from "./pages/checkout/Address";
 import CheckoutPayment from "./pages/checkout/Payment";
 import CheckoutSuccess from "./pages/checkout/Success";
@@ -91,6 +92,7 @@ const App = () => {
                       {/* Admin only */}
                       <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
                       <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+                      <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>

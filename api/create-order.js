@@ -1,4 +1,5 @@
 import Razorpay from "razorpay";
+import { getOrderAmount } from "./order-utils.js";
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -10,13 +11,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { amount } = req.body; // amount in paise (₹1 = 100 paise)
-
-  if (!amount || amount < 100) {
-    return res.status(400).json({ error: "Invalid amount" });
-  }
-
   try {
+    const { userId, items, couponCode } = req.body;
+    const pricing = await getOrderAmount({ userId, rawItems: items, couponCode });
+    const amount = Math.round(pricing.total * 100);
+
+    if (!amount || amount < 100) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
     const order = await razorpay.orders.create({
       amount,
       currency: "INR",
@@ -27,9 +30,10 @@ export default async function handler(req, res) {
       order_id: order.id,
       amount:   order.amount,
       currency: order.currency,
+      pricing,
     });
   } catch (err) {
     console.error("Razorpay create-order error:", err);
-    return res.status(500).json({ error: "Failed to create order" });
+    return res.status(500).json({ error: err.message || "Failed to create order" });
   }
 }

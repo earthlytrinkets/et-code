@@ -1,18 +1,6 @@
--- ══════════════════════════════════════════════════════════════════════════════
--- Earthly Trinkets — Prerequisites (run this FIRST, before 01_schema.sql)
---
--- This script sets up the base auth layer: profiles, roles, core triggers.
--- This scripts folder is the canonical manual setup path for a fresh project.
---
--- If you are setting up the database manually in the Supabase SQL Editor,
--- run the scripts in order from this folder.
---
--- Safe to run regardless: all statements use CREATE IF NOT EXISTS / OR REPLACE.
--- ══════════════════════════════════════════════════════════════════════════════
-
+-- Generated from supabase/scripts/00_prerequisites.sql
 
 -- ─── Profiles ─────────────────────────────────────────────────────────────────
--- One row per auth user. Stores display name, avatar, phone.
 
 CREATE TABLE IF NOT EXISTS public.profiles (
   id         UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -39,9 +27,13 @@ CREATE POLICY "Users can insert own profile"
 
 
 -- ─── Roles ────────────────────────────────────────────────────────────────────
--- app_role enum + user_roles table. Run 03_admin_setup.sql to grant admin.
 
-CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role' AND typnamespace = 'public'::regnamespace) THEN
+    CREATE TYPE public.app_role AS ENUM ('admin', 'user');
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.user_roles (
   id      UUID       PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,7 +55,6 @@ CREATE POLICY "Admins can manage roles"
 
 -- ─── Core functions ───────────────────────────────────────────────────────────
 
--- has_role(): used in all RLS policies to check if a user is admin
 CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -75,7 +66,6 @@ AS $$
   );
 $$;
 
--- update_updated_at_column(): used by all BEFORE UPDATE triggers
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
 RETURNS TRIGGER LANGUAGE plpgsql
 SET search_path = public
@@ -86,7 +76,6 @@ BEGIN
 END;
 $$;
 
--- handle_new_user(): auto-creates a profiles row + assigns 'user' role on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public
@@ -113,8 +102,8 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- updated_at trigger for profiles
 DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+

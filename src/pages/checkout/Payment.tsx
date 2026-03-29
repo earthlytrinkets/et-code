@@ -108,19 +108,6 @@ const CheckoutPayment = () => {
     },
   });
 
-  const createOrderItems = async (orderId: string) => {
-    const orderItems = items.map((item) => ({
-      order_id: orderId,
-      product_id: item.product.id,
-      product_name: item.product.name,
-      product_image: item.product.images[0] ?? null,
-      price: item.product.price,
-      quantity: item.quantity,
-    }));
-    const { error } = await (supabase.from("order_items" as never) as any).insert(orderItems);
-    if (error) console.error("order_items insert failed:", error.message);
-  };
-
   const decrementStock = async () => {
     await Promise.all(
       items.map((item) =>
@@ -135,20 +122,37 @@ const CheckoutPayment = () => {
   const handleCOD = async () => {
     setPlacing(true);
     setError("");
-    const { data, error: err } = await supabase
-      .from("orders")
-      .insert(buildOrderPayload("cod"))
-      .select("id")
-      .single();
-    if (err || !data) { setError("Failed to place order. Please try again."); setPlacing(false); return; }
-    await createOrderItems(data.id);
-    await decrementStock();
-    supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId: data.id } })
-      .then(({ data: d, error: e }) => console.log("order_placed email response:", d, e))
-      .catch((err) => console.error("order_placed email error:", err));
-    clearCart();
-    clearCheckout();
-    navigate(`/checkout/success?orderId=${data.id}`);
+    try {
+      const res = await fetch("/api/create-cod-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user!.id,
+          items: items.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+          })),
+          shippingAddress: buildOrderPayload("cod").shipping_address,
+          couponCode: appliedCoupon?.code ?? null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.orderId) {
+        throw new Error(data.error || "Failed to place order. Please try again.");
+      }
+
+      await decrementStock();
+      supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId: data.orderId } })
+        .then(({ data: d, error: e }) => console.log("order_placed email response:", d, e))
+        .catch((err) => console.error("order_placed email error:", err));
+      clearCart();
+      clearCheckout();
+      navigate(`/checkout/success?orderId=${data.orderId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to place order. Please try again.");
+      setPlacing(false);
+    }
   };
 
   const handleRazorpay = async () => {
@@ -164,7 +168,14 @@ const CheckoutPayment = () => {
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: Math.round(finalTotal * 100) }),
+        body: JSON.stringify({
+          userId: user!.id,
+          items: items.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+          })),
+          couponCode: appliedCoupon?.code ?? null,
+        }),
       });
       if (!res.ok) throw new Error("create-order failed");
       const data = await res.json();
@@ -208,13 +219,10 @@ const CheckoutPayment = () => {
               userId:              user!.id,
               items: items.map((i) => ({
                 product_id: i.product.id,
-                name:       i.product.name,
-                image:      i.product.images[0] ?? null,
-                price:      i.product.price,
                 quantity:   i.quantity,
               })),
               shippingAddress: { ...selectedAddress, email: user!.email ?? "" },
-              totalAmount:     finalTotal,
+              couponCode:      appliedCoupon?.code ?? null,
             }),
           });
           if (!verifyRes.ok) throw new Error("verify failed");

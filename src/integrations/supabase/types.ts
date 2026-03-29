@@ -84,37 +84,52 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          description: string | null
           discount_type: string
           discount_value: number
           expires_at: string | null
+          first_order_only: boolean
           id: string
           is_active: boolean
+          max_discount_amount: number | null
           max_uses: number | null
+          max_uses_per_user: number | null
           min_order_value: number
+          starts_at: string | null
           uses_count: number
         }
         Insert: {
           code: string
           created_at?: string
+          description?: string | null
           discount_type: string
           discount_value: number
           expires_at?: string | null
+          first_order_only?: boolean
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           max_uses?: number | null
+          max_uses_per_user?: number | null
           min_order_value?: number
+          starts_at?: string | null
           uses_count?: number
         }
         Update: {
           code?: string
           created_at?: string
+          description?: string | null
           discount_type?: string
           discount_value?: number
           expires_at?: string | null
+          first_order_only?: boolean
           id?: string
           is_active?: boolean
+          max_discount_amount?: number | null
           max_uses?: number | null
+          max_uses_per_user?: number | null
           min_order_value?: number
+          starts_at?: string | null
           uses_count?: number
         }
         Relationships: []
@@ -446,6 +461,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_coupon_usage: {
+        Args: { p_code: string; p_delta: number }
+        Returns: boolean
+      }
       decrement_product_stock: {
         Args: { p_product_id: string; p_quantity: number }
         Returns: boolean
@@ -462,6 +481,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      validate_coupon_code: {
+        Args: { p_code: string; p_subtotal: number; p_user_id: string | null }
+        Returns: {
+          code: string
+          discount_amount: number
+          discount_type: string
+          discount_value: number
+          max_discount_amount: number | null
+          min_order_value: number
+        }[]
       }
     }
     Enums: {

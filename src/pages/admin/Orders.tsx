@@ -141,6 +141,13 @@ const OrderRow = ({ order }: { order: Order }) => {
       const newStatus = (patch as Partial<Order>).status;
       const restoreStatuses: OrderStatus[] = ["cancelled", "refunded"];
       if (newStatus && restoreStatuses.includes(newStatus) && !restoreStatuses.includes(order.status)) {
+        if (order.coupon_code) {
+          const { error: couponError } = await supabase.rpc("adjust_coupon_usage", {
+            p_code: order.coupon_code,
+            p_delta: -1,
+          });
+          if (couponError) throw couponError;
+        }
         for (const item of order.order_items) {
           if (item.product_id) {
             await supabase.rpc("increment_product_stock", {

@@ -16,6 +16,8 @@ export interface CheckoutCoupon {
   code: string;
   discount_type: "percentage" | "flat";
   discount_value: number;
+  min_order_value: number;
+  max_discount_amount: number | null;
 }
 
 interface CheckoutContextType {
