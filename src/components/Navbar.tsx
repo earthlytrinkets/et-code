@@ -28,6 +28,7 @@ const Navbar = () => {
     { to: "/contact", label: "Contact" },
   ];
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -40,6 +41,25 @@ const Navbar = () => {
     if (userMenuOpen) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [userMenuOpen]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(target)) {
+        setMobileOpen(false);
+      }
+    };
+
+    if (mobileOpen) {
+      document.addEventListener("mousedown", handler);
+      document.addEventListener("touchstart", handler);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, [mobileOpen]);
 
   // Share cache key with Profile page so avatar updates instantly everywhere
   const { data: profile } = useQuery({
@@ -187,6 +207,7 @@ const Navbar = () => {
         <AnimatePresence>
           {mobileOpen && (
             <motion.nav
+              ref={mobileMenuRef}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
