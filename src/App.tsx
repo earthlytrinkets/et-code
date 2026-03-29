@@ -37,10 +37,19 @@ const ScrollToTop = () => {
 };
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  // Show splash only on first visit to the homepage, not on direct links to other pages
+  const isHomepage = window.location.pathname === "/";
+  const hasSeenSplash = sessionStorage.getItem("splashSeen") === "1";
+  const [showSplash, setShowSplash] = useState(isHomepage && !hasSeenSplash);
+
+  const handleSplashDone = () => {
+    setShowSplash(false);
+    sessionStorage.setItem("splashSeen", "1");
+  };
+
   return (
     <>
-      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
