@@ -420,8 +420,8 @@ DECLARE
 BEGIN
   SELECT *
   INTO v_coupon
-  FROM public.coupons
-  WHERE upper(code) = upper(trim(p_code));
+  FROM public.coupons c
+  WHERE upper(c.code) = upper(trim(p_code));
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invalid coupon code.';
