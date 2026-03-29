@@ -131,9 +131,8 @@ Run in order in Supabase SQL Editor:
 | Script | Purpose |
 |--------|---------|
 | `00_prerequisites.sql` | Enums, roles, `handle_new_user()` trigger |
-| `01_schema.sql` | All tables, RLS policies, stock functions |
+| `01_schema.sql` | All tables, RLS policies, stock functions, subscribers |
 | `02_storage.sql` | Product images storage bucket |
 | `03_admin_setup.sql` | Assign admin role to a user |
 | `04_test_user.sql` | Create test user for development |
-| `05_subscribers.sql` | Newsletter subscribers table |
 | `99_cleanup.sql` | Selective data cleanup (use sections individually) |

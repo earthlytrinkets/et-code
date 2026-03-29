@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts } from "@/hooks/useProducts";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
-import { Mail, Send, RefreshCw, UserX, UserCheck, X, Loader2 } from "lucide-react";
+import { Mail, Send, RefreshCw, UserX, UserCheck, Trash2, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -165,6 +165,20 @@ export const AdminSubscribersSection = () => {
     onError: () => toast.error("Failed to update subscriber"),
   });
 
+  const deleteSubscriber = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from("subscribers" as never) as any)
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
+      toast.success("Subscriber deleted");
+    },
+    onError: () => toast.error("Failed to delete subscriber"),
+  });
+
   const activeCount = subscribers.filter((s) => s.status === "active").length;
 
   return (
@@ -242,6 +256,18 @@ export const AdminSubscribersSection = () => {
                 title={sub.status === "active" ? "Unsubscribe" : "Resubscribe"}
               >
                 {sub.status === "active" ? <UserX size={14} /> : <UserCheck size={14} />}
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`Delete ${sub.email}?`)) {
+                    deleteSubscriber.mutate(sub.id);
+                  }
+                }}
+                disabled={deleteSubscriber.isPending}
+                className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                title="Delete subscriber"
+              >
+                <Trash2 size={14} />
               </button>
             </div>
           ))}

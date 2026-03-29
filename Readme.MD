@@ -105,14 +105,13 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 ## Database Setup
 
-Run the SQL scripts in `supabase/scripts/` in order (00 → 05) in the Supabase SQL Editor:
+Run the SQL scripts in `supabase/scripts/` in order (00 → 04) in the Supabase SQL Editor:
 
 1. `00_prerequisites.sql` — enums, extensions
-2. `01_schema.sql` — tables, RLS policies, functions
+2. `01_schema.sql` — tables, RLS policies, functions (includes subscribers)
 3. `02_storage.sql` — product-images bucket + policies
 4. `03_admin_setup.sql` — admin role setup
 5. `04_test_user.sql` — test user for development
-6. `05_subscribers.sql` — newsletter subscribers table
 
 ## Deployment
 

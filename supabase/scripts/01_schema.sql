@@ -5,7 +5,7 @@
 -- Run order:
 --   1. 00_prerequisites.sql  — profiles, user_roles, has_role(), triggers
 --                              (skip if already applied via Supabase CLI / Lovable)
---   2. 01_schema.sql         — this file (all product/order/review tables)
+--   2. 01_schema.sql         — this file (all product/order/review/subscriber tables)
 --   3. 02_storage.sql        — storage buckets + policies
 --   4. 03_admin_setup.sql    — grant admin role to a specific user
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -396,3 +396,56 @@ VALUES
   ('FLAT100',   'flat',       100, 500,  NULL),
   ('FIRST50',   'percentage', 50,  1000, 100)
 ON CONFLICT (code) DO NOTHING;
+
+
+-- ─── Subscribers (Newsletter) ───────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.subscribers (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email      TEXT        NOT NULL UNIQUE,
+  status     TEXT        NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'unsubscribed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.subscribers ENABLE ROW LEVEL SECURITY;
+
+-- Anyone can subscribe (insert)
+CREATE POLICY "Anyone can subscribe"
+  ON public.subscribers FOR INSERT
+  WITH CHECK (true);
+
+-- Only admins can read subscribers
+CREATE POLICY "Admins can read subscribers"
+  ON public.subscribers FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+        AND user_roles.role = 'admin'::app_role
+    )
+  );
+
+-- Only admins can update subscribers (unsubscribe etc.)
+CREATE POLICY "Admins can update subscribers"
+  ON public.subscribers FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+        AND user_roles.role = 'admin'::app_role
+    )
+  );
+
+-- Only admins can delete subscribers
+CREATE POLICY "Admins can delete subscribers"
+  ON public.subscribers FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_roles.user_id = auth.uid()
+        AND user_roles.role = 'admin'::app_role
+    )
+  );
+
+-- Service role (edge functions) can read/update for sending emails and unsubscribe
+-- (service_role bypasses RLS by default, so no policy needed)
