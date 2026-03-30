@@ -827,7 +827,7 @@ serve(async (req) => {
       ));
 
       // Low stock check — alert admin for products with stock <= 2 after this order
-      const productIds = (order.order_items as Item[]).map((i: Record<string, unknown>) => i.product_id as string).filter(Boolean);
+      const productIds = (order.order_items as Record<string, unknown>[]).map((i) => i.product_id as string).filter(Boolean);
       if (productIds.length) {
         const { data: lowStock } = await supabase
           .from("products")

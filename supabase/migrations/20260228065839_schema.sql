@@ -560,6 +560,10 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) TO service_role;
+
 INSERT INTO public.coupons (code, description, discount_type, discount_value, min_order_value, max_uses, first_order_only, max_uses_per_user, max_discount_amount)
 VALUES
   ('WELCOME10', 'Welcome discount for new customers', 'percentage', 10,  0,    NULL, false, 1, NULL),

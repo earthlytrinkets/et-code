@@ -469,6 +469,10 @@ export type Database = {
         Args: { p_product_id: string; p_quantity: number }
         Returns: boolean
       }
+      increment_product_stock: {
+        Args: { p_product_id: string; p_quantity: number }
+        Returns: boolean
+      }
       get_verified_buyers: {
         Args: { p_product_id: string }
         Returns: {

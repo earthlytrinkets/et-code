@@ -126,6 +126,7 @@ BEGIN
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO service_role;
 
 -- Atomically increment stock when an order is cancelled or returned.
@@ -144,6 +145,7 @@ BEGIN
 END;
 $$;
 
+GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO service_role;
 
 
@@ -545,8 +547,9 @@ BEGIN
 END;
 $$;
 
--- Only service_role (server-side) can adjust coupon usage; block all client access
-REVOKE ALL ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) FROM anon, public, authenticated;
+-- service_role for server-side order creation; authenticated for admin cancel/refund
+REVOKE ALL ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) TO service_role;
 
 -- Sample coupons — remove or adjust before going live
