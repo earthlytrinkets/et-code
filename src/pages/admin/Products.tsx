@@ -211,8 +211,8 @@ const ProductFormModal = ({
   });
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-card p-6 shadow-elevated my-8">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="w-full max-w-2xl rounded-2xl bg-card p-6 shadow-elevated my-8" onClick={(e) => e.stopPropagation()}>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-display text-xl font-bold text-foreground">
             {initial ? "Edit Product" : "New Product"}

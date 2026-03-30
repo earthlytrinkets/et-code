@@ -157,8 +157,8 @@ const CouponModal = ({
   });
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4">
-      <div className="my-8 w-full max-w-3xl rounded-2xl bg-card p-6 shadow-elevated">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="my-8 w-full max-w-3xl rounded-2xl bg-card p-6 shadow-elevated" onClick={(e) => e.stopPropagation()}>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-display text-xl font-bold text-foreground">
             {initial ? "Edit Coupon" : "Create Coupon"}
