@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -999,7 +999,9 @@ const adminNavItems: { id: Section; label: string; icon: React.ElementType; desc
 const ProfilePage = () => {
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState<Section>("profile");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sectionParam = searchParams.get("section") as Section | null;
+  const [activeSection, setActiveSection] = useState<Section>(sectionParam || "profile");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useIsAdmin();
@@ -1132,7 +1134,10 @@ const ProfilePage = () => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
+                    onClick={() => {
+                      setActiveSection(item.id);
+                      setSearchParams({ section: item.id });
+                    }}
                     className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
                       !isLast ? "border-b border-border" : ""
                     } ${

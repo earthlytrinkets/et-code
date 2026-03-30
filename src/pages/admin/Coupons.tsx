@@ -306,7 +306,7 @@ const CouponModal = ({
           <p className="mt-4 font-body text-xs text-destructive">{validationError}</p>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending || !!validationError}>
             {save.isPending ? "Saving..." : initial ? "Update Coupon" : "Create Coupon"}

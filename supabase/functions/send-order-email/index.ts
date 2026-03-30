@@ -276,7 +276,7 @@ function orderShippedEmail(order: Order) {
     </div>` : ""}
 
     ${addressBlock(addr)}
-    ${ctaButton("Track Your Order &rarr;", `${SITE_URL}/profile`)}`
+    ${ctaButton("Track Your Order &rarr;", awb && method === "shiprocket" ? `https://shiprocket.co/tracking/${awb}` : `${SITE_URL}/profile`)}`
   );
 }
 
