@@ -154,7 +154,9 @@ const Cart = () => {
             {/* Coupon */}
             <div>
               <p className="font-body text-sm font-medium text-foreground mb-2">Have a coupon?</p>
-              {appliedCoupon ? (
+              {!user ? (
+                <p className="font-body text-xs text-muted-foreground">Sign in to apply a coupon code</p>
+              ) : appliedCoupon ? (
                 <div className="flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Tag size={14} className="text-primary" />
