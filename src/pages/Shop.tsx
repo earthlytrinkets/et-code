@@ -118,7 +118,16 @@ const Shop = () => {
             </div>
             {filtered.length === 0 && (
               <div className="py-20 text-center">
-                <p className="font-body text-muted-foreground">No products found. Try a different filter.</p>
+                {activeCategory !== "all" && !search ? (
+                  <>
+                    <p className="font-display text-2xl font-bold text-foreground">Coming Soon</p>
+                    <p className="mt-2 font-body text-sm text-muted-foreground">
+                      We're working on new pieces for this collection. Stay tuned!
+                    </p>
+                  </>
+                ) : (
+                  <p className="font-body text-muted-foreground">No products found. Try a different filter.</p>
+                )}
               </div>
             )}
           </>

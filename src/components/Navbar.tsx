@@ -26,7 +26,7 @@ const Navbar = () => {
     { to: "/shop", label: roleChecked && isAdmin ? "Shop (View Only)" : "Shop" },
     { to: "/about", label: "About" },
     ...(!!user && !(roleChecked && isAdmin) ? [{ to: "/custom-orders", label: "Custom Orders" }] : []),
-    { to: "/contact", label: "Contact" },
+    ...(!(roleChecked && isAdmin) ? [{ to: "/contact", label: "Contact" }] : []),
   ];
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLElement>(null);

@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
-const About = () => (
+const About = () => {
+  const { isAdmin, roleChecked } = useIsAdmin();
+  const showCustomSection = !(roleChecked && isAdmin);
+
+  return (
   <div className="min-h-screen bg-background">
     <Navbar />
     <main className="container mx-auto px-4 py-16 lg:px-8">
@@ -47,30 +52,33 @@ const About = () => (
         </section>
       </div>
 
-      <section className="mt-10 max-w-3xl rounded-2xl border border-border bg-secondary/40 p-8">
-        <h2 className="font-display text-xl font-semibold text-foreground">Looking for something personal?</h2>
-        <p className="mt-3 font-body text-sm leading-relaxed text-muted-foreground">
-          We also create custom resin pieces for gifts, preserved florals, and one-of-a-kind ideas.
-          If you have a concept in mind, we would love to hear about it.
-        </p>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <Link
-            to="/custom-orders"
-            className="rounded-full bg-primary px-5 py-2.5 font-body text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
-          >
-            Start a Custom Order
-          </Link>
-          <Link
-            to="/contact"
-            className="rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
-            Contact Us
-          </Link>
-        </div>
-      </section>
+      {showCustomSection && (
+        <section className="mt-10 max-w-3xl rounded-2xl border border-border bg-secondary/40 p-8">
+          <h2 className="font-display text-xl font-semibold text-foreground">Looking for something personal?</h2>
+          <p className="mt-3 font-body text-sm leading-relaxed text-muted-foreground">
+            We also create custom resin pieces for gifts, preserved florals, and one-of-a-kind ideas.
+            If you have a concept in mind, we would love to hear about it.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              to="/custom-orders"
+              className="rounded-full bg-primary px-5 py-2.5 font-body text-sm font-semibold text-primary-foreground transition-colors hover:opacity-90"
+            >
+              Start a Custom Order
+            </Link>
+            <Link
+              to="/contact"
+              className="rounded-full border border-border px-5 py-2.5 font-body text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+            >
+              Contact Us
+            </Link>
+          </div>
+        </section>
+      )}
     </main>
     <Footer />
   </div>
-);
+  );
+};
 
 export default About;
