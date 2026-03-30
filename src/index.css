@@ -118,6 +118,15 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
+
+  /* Fix native date/time inputs on iOS/iPadOS */
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.5rem;
+  }
 }
 
 @layer utilities {

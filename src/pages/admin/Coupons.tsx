@@ -286,21 +286,19 @@ const CouponModal = ({
 
           <div className="space-y-1.5">
             <Label>Starts At</Label>
-            <input
+            <Input
               type="datetime-local"
               value={form.starts_at}
               onChange={(e) => set("starts_at", e.target.value)}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
             />
           </div>
 
           <div className="space-y-1.5">
             <Label>Expires At</Label>
-            <input
+            <Input
               type="datetime-local"
               value={form.expires_at}
               onChange={(e) => set("expires_at", e.target.value)}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
             />
           </div>
         </div>
