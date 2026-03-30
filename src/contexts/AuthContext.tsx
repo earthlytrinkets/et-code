@@ -23,41 +23,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: existing } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, created_at")
+      .select("id, full_name, avatar_url")
       .eq("id", user.id)
       .maybeSingle();
 
-    const welcomeKey = `et_welcome_sent_${user.id}`;
-
     if (!existing) {
       await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
-      // Send welcome email for new Google OAuth sign-ups
-      if (user.email && !localStorage.getItem(welcomeKey)) {
-        localStorage.setItem(welcomeKey, "1");
-        supabase.functions.invoke("send-order-email", {
-          body: { event: "welcome", email: user.email, name: name ?? "" },
-        }).catch(console.error);
-      }
     } else {
-      // Profile auto-created by handle_new_user() trigger — detect new user
-      // by checking the localStorage flag (avoids fragile time-window heuristics)
-      const isNewUser = !localStorage.getItem(welcomeKey);
-      // Only send once: within 2 minutes of account creation to avoid sending
-      // on returning logins where localStorage was cleared
-      const accountAge = Date.now() - new Date(user.created_at).getTime();
-      if (isNewUser && accountAge < 120_000 && user.email) {
-        localStorage.setItem(welcomeKey, "1");
-        supabase.functions.invoke("send-order-email", {
-          body: { event: "welcome", email: user.email, name: name ?? "" },
-        }).catch(console.error);
-      }
-
       // Only fill fields the user hasn't already customised
       const updates: Record<string, string | undefined> = {};
       if (!existing.full_name && name) updates.full_name = name;
       if (!existing.avatar_url && avatar) updates.avatar_url = avatar;
       if (Object.keys(updates).length > 0)
         await supabase.from("profiles").update(updates).eq("id", user.id);
+    }
+
+    // Send welcome email exactly once — tracked via user_metadata (server-side,
+    // works across devices/browsers unlike localStorage)
+    if (user.email && !meta?.welcome_email_sent) {
+      await supabase.auth.updateUser({ data: { welcome_email_sent: true } });
+      supabase.functions.invoke("send-order-email", {
+        body: { event: "welcome", email: user.email, name: name ?? "" },
+      }).catch(console.error);
     }
   };
 
