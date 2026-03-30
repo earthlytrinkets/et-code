@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS public.categories (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read categories"
+  ON public.categories FOR SELECT
+  USING (true);
+
+CREATE POLICY "Admins can manage categories"
+  ON public.categories FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::app_role));
+
 INSERT INTO public.categories (name, slug) VALUES
   ('Rings',        'rings'),
   ('Earrings',     'earrings'),
@@ -116,7 +126,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO service_role;
 
 -- Atomically increment stock when an order is cancelled or returned.
 CREATE OR REPLACE FUNCTION public.increment_product_stock(
@@ -134,7 +144,6 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_product_stock(uuid, integer) TO service_role;
 
 
@@ -310,7 +319,7 @@ BEGIN
                            FROM public.reviews WHERE product_id = _product_id),
          review_count = (SELECT COUNT(*) FROM public.reviews WHERE product_id = _product_id)
    WHERE id = _product_id;
-  RETURN NEW;
+  RETURN COALESCE(NEW, OLD);
 END;
 $$;
 
@@ -499,6 +508,10 @@ BEGIN
 END;
 $$;
 
+-- Only authenticated users can validate (for Cart preview); block anon
+REVOKE ALL ON FUNCTION public.validate_coupon_code(TEXT, UUID, NUMERIC) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.validate_coupon_code(TEXT, UUID, NUMERIC) TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.adjust_coupon_usage(
   p_code TEXT,
   p_delta INTEGER
@@ -533,6 +546,10 @@ BEGIN
   RETURN v_updated > 0;
 END;
 $$;
+
+-- Only service_role (server-side) can adjust coupon usage; block all client access
+REVOKE ALL ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) FROM anon, public, authenticated;
+GRANT EXECUTE ON FUNCTION public.adjust_coupon_usage(TEXT, INTEGER) TO service_role;
 
 -- Sample coupons — remove or adjust before going live
 INSERT INTO public.coupons (code, description, discount_type, discount_value, min_order_value, max_uses, first_order_only, max_uses_per_user, max_discount_amount)

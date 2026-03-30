@@ -108,24 +108,22 @@ const CheckoutPayment = () => {
     },
   });
 
-  const decrementStock = async () => {
-    await Promise.all(
-      items.map((item) =>
-        (supabase as any).rpc("decrement_product_stock", {
-          p_product_id: item.product.id,
-          p_quantity: item.quantity,
-        })
-      )
-    );
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.access_token}`,
+    };
   };
 
   const handleCOD = async () => {
     setPlacing(true);
     setError("");
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch("/api/create-cod-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           userId: user!.id,
           items: items.map((item) => ({
@@ -142,7 +140,6 @@ const CheckoutPayment = () => {
         throw new Error(data.error || "Failed to place order. Please try again.");
       }
 
-      await decrementStock();
       supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId: data.orderId } })
         .then(({ data: d, error: e }) => console.log("order_placed email response:", d, e))
         .catch((err) => console.error("order_placed email error:", err));
@@ -164,10 +161,11 @@ const CheckoutPayment = () => {
 
     // 1. Create Razorpay order via serverless function
     let razorpayOrderId: string;
+    const authHeaders = await getAuthHeaders();
     try {
       const res = await fetch("/api/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders,
         body: JSON.stringify({
           userId: user!.id,
           items: items.map((item) => ({
@@ -209,9 +207,10 @@ const CheckoutPayment = () => {
         // 3. Verify signature + save order via serverless function
         setProcessing(true);
         try {
+          const verifyHeaders = await getAuthHeaders();
           const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: verifyHeaders,
             body: JSON.stringify({
               razorpay_order_id:   response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -227,7 +226,6 @@ const CheckoutPayment = () => {
           });
           if (!verifyRes.ok) throw new Error("verify failed");
           const { orderId } = await verifyRes.json();
-          await decrementStock();
           supabase.functions.invoke("send-order-email", { body: { event: "order_placed", orderId } }).catch(console.error);
           clearCart();
           clearCheckout();

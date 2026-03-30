@@ -5,6 +5,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Verify Supabase JWT from Authorization header and return the authenticated user ID.
+// Ensures the userId in the request body matches the token's owner.
+export const authenticateRequest = async (req) => {
+  const authHeader = req.headers?.authorization || req.headers?.Authorization;
+  const token = authHeader?.replace("Bearer ", "");
+  if (!token) throw new Error("Missing authentication token.");
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) throw new Error("Invalid or expired authentication token.");
+
+  const { userId } = req.body || {};
+  if (userId && userId !== user.id) {
+    throw new Error("User ID mismatch.");
+  }
+
+  return user.id;
+};
+
 const normalizeCode = (code) => code?.trim().toUpperCase() || null;
 
 const sanitizeItems = (items) => {
@@ -96,6 +114,40 @@ export const createOrderWithPricing = async ({
   const discountAmount = coupon ? Number(coupon.discount_amount) : 0;
   const total = subtotal - discountAmount;
 
+  if (total <= 0) {
+    throw new Error("Invalid order total.");
+  }
+
+  // Reserve coupon BEFORE inserting order to prevent race conditions
+  try {
+    await reserveCouponUsage(coupon?.code ?? null);
+  } catch (error) {
+    throw error;
+  }
+
+  // Decrement stock server-side (atomic, prevents overselling)
+  for (const item of orderItems) {
+    const { data: ok, error: stockErr } = await supabase.rpc("decrement_product_stock", {
+      p_product_id: item.product_id,
+      p_quantity: item.quantity,
+    });
+    if (stockErr || !ok) {
+      // Release coupon if stock fails
+      if (coupon?.code) {
+        await supabase.rpc("adjust_coupon_usage", { p_code: coupon.code, p_delta: -1 }).catch(() => {});
+      }
+      // Restore stock for already-decremented items
+      for (const prev of orderItems) {
+        if (prev.product_id === item.product_id) break;
+        await supabase.rpc("increment_product_stock", {
+          p_product_id: prev.product_id,
+          p_quantity: prev.quantity,
+        }).catch(() => {});
+      }
+      throw new Error(`Insufficient stock for ${item.product_name}.`);
+    }
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -115,6 +167,16 @@ export const createOrderWithPricing = async ({
     .single();
 
   if (orderError || !order) {
+    // Restore stock + coupon on order failure
+    for (const item of orderItems) {
+      await supabase.rpc("increment_product_stock", {
+        p_product_id: item.product_id,
+        p_quantity: item.quantity,
+      }).catch(() => {});
+    }
+    if (coupon?.code) {
+      await supabase.rpc("adjust_coupon_usage", { p_code: coupon.code, p_delta: -1 }).catch(() => {});
+    }
     throw new Error("Failed to create order.");
   }
 
@@ -130,13 +192,6 @@ export const createOrderWithPricing = async ({
   if (itemsError) {
     await supabase.from("orders").delete().eq("id", order.id);
     throw new Error("Failed to save order items.");
-  }
-
-  try {
-    await reserveCouponUsage(coupon?.code ?? null);
-  } catch (error) {
-    await supabase.from("orders").delete().eq("id", order.id);
-    throw error;
   }
 
   return {
@@ -155,10 +210,11 @@ export const getOrderAmount = async ({ userId, rawItems, couponCode }) => {
   const coupon = await validateCoupon({ couponCode, userId, subtotal });
   const discountAmount = coupon ? Number(coupon.discount_amount) : 0;
 
+  const total = subtotal - discountAmount;
   return {
     subtotal,
     discountAmount,
-    total: subtotal - discountAmount,
+    total: total > 0 ? total : 0,
     couponCode: coupon?.code ?? null,
   };
 };

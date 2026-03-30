@@ -5,12 +5,14 @@ import type { Product } from "@/types/product";
 // Select all columns including joined category name/slug
 const PRODUCT_SELECT = "*, categories(name, slug)";
 
+// Cache products for 30s — avoids refetching on every mount/navigation
+const STALE_TIME = 30_000;
+
 // All active products — used by Shop page
 export const useProducts = (filters?: { categorySlug?: string; search?: string }) => {
   return useQuery({
     queryKey: ["products", filters],
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: STALE_TIME,
     queryFn: async () => {
       let query = supabase
         .from("products")
@@ -40,8 +42,7 @@ export const useProducts = (filters?: { categorySlug?: string; search?: string }
 export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ["products", "featured"],
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -59,8 +60,7 @@ export const useFeaturedProducts = () => {
 export const useProduct = (slug: string) => {
   return useQuery({
     queryKey: ["product", slug],
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")

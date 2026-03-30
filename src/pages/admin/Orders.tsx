@@ -538,12 +538,12 @@ export const AdminOrdersSection = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), profiles(full_name, phone)")
         .order("created_at", { ascending: false });
       if (statusFilter !== "all") query = query.eq("status", statusFilter);
       const { data, error } = await query;
       if (error) throw error;
-      return data as Order[];
+      return data as unknown as Order[];
     },
   });
 

@@ -1,5 +1,5 @@
 import Razorpay from "razorpay";
-import { getOrderAmount } from "./order-utils.js";
+import { getOrderAmount, authenticateRequest } from "./order-utils.js";
 
 const razorpay = new Razorpay({
   key_id:     process.env.RAZORPAY_KEY_ID,
@@ -12,8 +12,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, items, couponCode } = req.body;
-    const pricing = await getOrderAmount({ userId, rawItems: items, couponCode });
+    const verifiedUserId = await authenticateRequest(req);
+    const { items, couponCode } = req.body;
+    const pricing = await getOrderAmount({ userId: verifiedUserId, rawItems: items, couponCode });
     const amount = Math.round(pricing.total * 100);
 
     if (!amount || amount < 100) {

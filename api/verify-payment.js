@@ -1,16 +1,22 @@
 import crypto from "crypto";
-import { createOrderWithPricing } from "./order-utils.js";
+import { createOrderWithPricing, authenticateRequest } from "./order-utils.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  let verifiedUserId;
+  try {
+    verifiedUserId = await authenticateRequest(req);
+  } catch (authErr) {
+    return res.status(401).json({ error: authErr.message });
+  }
+
   const {
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
-    userId,
     items,
     shippingAddress,
     couponCode,
@@ -30,7 +36,7 @@ export default async function handler(req, res) {
   // ── 2. Save order to Supabase ────────────────────────────────────────────
   try {
     const order = await createOrderWithPricing({
-      userId,
+      userId: verifiedUserId,
       rawItems: items,
       shippingAddress,
       paymentMethod: "razorpay",

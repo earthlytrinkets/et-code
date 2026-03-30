@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ShoppingBag, Plus, Minus, Star } from "lucide-react";
 import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
+import { queueCartAuthIntent } from "@/lib/auth-intent";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const { items, addToCart, updateQuantity } = useCart();
+  const { user } = useAuth();
   const { isAdmin, roleChecked } = useIsAdmin();
 
   const cartItem = items.find((i) => i.product.id === product.id);
@@ -59,6 +62,10 @@ const ProductCard = ({ product }: { product: Product }) => {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
+                    if (!user) {
+                      queueCartAuthIntent({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                      return;
+                    }
                     addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
@@ -76,7 +83,14 @@ const ProductCard = ({ product }: { product: Product }) => {
                   </button>
                   <span className="font-body text-xs font-bold text-foreground min-w-[16px] text-center">{qty}</span>
                   <button
-                    onClick={(e) => { e.preventDefault(); addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock }); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!user) {
+                        queueCartAuthIntent({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                        return;
+                      }
+                      addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                    }}
                     className="flex h-6 w-6 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
                   >
                     <Plus size={11} />

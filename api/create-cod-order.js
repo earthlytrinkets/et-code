@@ -1,4 +1,4 @@
-import { createOrderWithPricing } from "./order-utils.js";
+import { createOrderWithPricing, authenticateRequest } from "./order-utils.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -6,9 +6,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId, items, shippingAddress, couponCode } = req.body;
+    const verifiedUserId = await authenticateRequest(req);
+    const { items, shippingAddress, couponCode } = req.body;
     const order = await createOrderWithPricing({
-      userId,
+      userId: verifiedUserId,
       rawItems: items,
       shippingAddress,
       paymentMethod: "cod",

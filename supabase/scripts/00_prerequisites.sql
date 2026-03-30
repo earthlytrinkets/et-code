@@ -52,18 +52,7 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view own roles"
-  ON public.user_roles FOR SELECT TO authenticated
-  USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'::app_role));
-
-CREATE POLICY "Admins can manage roles"
-  ON public.user_roles FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'::app_role));
-
-
--- ─── Core functions ───────────────────────────────────────────────────────────
-
--- has_role(): used in all RLS policies to check if a user is admin
+-- has_role() must be defined BEFORE policies that reference it
 CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
 RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER
@@ -74,6 +63,17 @@ AS $$
     WHERE user_id = _user_id AND role = _role
   );
 $$;
+
+CREATE POLICY "Users can view own roles"
+  ON public.user_roles FOR SELECT TO authenticated
+  USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'::app_role));
+
+CREATE POLICY "Admins can manage roles"
+  ON public.user_roles FOR ALL TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'::app_role));
+
+
+-- ─── Core functions ───────────────────────────────────────────────────────────
 
 -- update_updated_at_column(): used by all BEFORE UPDATE triggers
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()

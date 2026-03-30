@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 import Navbar from "@/components/Navbar";
@@ -9,12 +10,14 @@ import ReviewSection from "@/components/ReviewSection";
 import { ShoppingBag, Star, ArrowLeft, ArrowRight, Plus, Minus, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, useRef } from "react";
+import { queueAuthRedirect, queueCartAuthIntent } from "@/lib/auth-intent";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
   const { items, addToCart, updateQuantity } = useCart();
+  const { user } = useAuth();
   const { isAdmin, roleChecked } = useIsAdmin();
 
   const navigate = useNavigate();
@@ -216,7 +219,14 @@ const ProductDetail = () => {
                   </button>
                 ) : qty === 0 ? (
                   <button
-                    onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
+                    onClick={() => {
+                      const cartProduct = { id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock };
+                      if (!user) {
+                        queueCartAuthIntent(cartProduct);
+                        return;
+                      }
+                      addToCart(cartProduct);
+                    }}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow md:w-auto"
                   >
                     <ShoppingBag size={16} /> Add to Cart
@@ -233,14 +243,27 @@ const ProductDetail = () => {
                       </button>
                       <span className="min-w-[48px] text-center font-display text-base font-bold text-foreground">{qty}</span>
                       <button
-                        onClick={() => addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock })}
+                        onClick={() => {
+                          const cartProduct = { id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock };
+                          if (!user) {
+                            queueCartAuthIntent(cartProduct);
+                            return;
+                          }
+                          addToCart(cartProduct);
+                        }}
                         className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                       >
                         <Plus size={16} />
                       </button>
                     </div>
                     <button
-                      onClick={() => navigate("/checkout/address")}
+                      onClick={() => {
+                        if (!user) {
+                          queueAuthRedirect("/cart");
+                          return;
+                        }
+                        navigate("/checkout/address");
+                      }}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
                     >
                       Proceed to Checkout <ArrowRight size={15} />

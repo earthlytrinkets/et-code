@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import AuthModal from "@/components/AuthModal";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
+import { OPEN_AUTH_EVENT, POST_AUTH_REDIRECT_KEY } from "@/lib/auth-intent";
 
 
 const Navbar = () => {
@@ -68,6 +69,22 @@ const Navbar = () => {
       document.removeEventListener("touchstart", handler);
     };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    const handler = () => setAuthOpen(true);
+    window.addEventListener(OPEN_AUTH_EVENT, handler);
+    return () => window.removeEventListener(OPEN_AUTH_EVENT, handler);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const redirectTo = localStorage.getItem(POST_AUTH_REDIRECT_KEY);
+    if (!redirectTo) return;
+
+    localStorage.removeItem(POST_AUTH_REDIRECT_KEY);
+    setAuthOpen(false);
+    if (location.pathname !== redirectTo) navigate(redirectTo);
+  }, [user, location.pathname, navigate]);
 
   // Share cache key with Profile page so avatar updates instantly everywhere
   const { data: profile } = useQuery({
@@ -185,7 +202,7 @@ const Navbar = () => {
                         <Settings size={14} /> Settings
                       </Link>
                       <button
-                        onClick={async () => { await signOut(); setUserMenuOpen(false); navigate('/'); }}
+                        onClick={() => { signOut().catch(console.error); setUserMenuOpen(false); navigate('/'); }}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
                         <LogOut size={14} /> Sign Out
@@ -271,7 +288,7 @@ const Navbar = () => {
                         <Settings size={16} />
                       </Link>
                       <button
-                        onClick={async () => { await signOut(); setMobileOpen(false); navigate("/"); }}
+                        onClick={() => { signOut().catch(console.error); setMobileOpen(false); navigate("/"); }}
                         className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                         title="Sign Out"
                       >
