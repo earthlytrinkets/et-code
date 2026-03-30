@@ -1,1 +1,7 @@
-project_id = "babhvcgybtwwbphkwela"
+project_id = "abymyaohtxrbaiiyoyak"
+
+[functions.send-order-email]
+verify_jwt = false
+
+[functions.shiprocket]
+verify_jwt = false
