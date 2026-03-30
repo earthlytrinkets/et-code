@@ -269,7 +269,7 @@ const CheckoutSuccess = () => {
                 Continue Shopping
               </Link>
               <Link
-                to="/profile"
+                to="/profile?section=orders"
                 className="flex-1 inline-flex items-center justify-center gap-2 rounded-full border-2 border-border py-3.5 font-body text-sm font-semibold text-foreground hover:bg-secondary hover:border-primary/30 transition-all"
               >
                 <Package size={16} />

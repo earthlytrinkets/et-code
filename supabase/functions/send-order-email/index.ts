@@ -545,6 +545,85 @@ function passwordChangedEmail(name: string) {
 
 // ─── Admin notification ───────────────────────────────────────────────────────
 
+function adminCustomOrderEmail(customerName: string, customerEmail: string, description: string, budget: string | null) {
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#e8e8e8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden" cellpadding="0" cellspacing="0">
+        <tr><td style="background:${C.accent};padding:22px 32px">
+          <p style="margin:0;color:rgba(255,255,255,0.7);font-size:11px;letter-spacing:0.15em;text-transform:uppercase">&#127912; Custom Order Request</p>
+          <h2 style="margin:4px 0 0;color:#fff;font-size:22px;font-weight:700">New request from ${customerName || "a customer"}</h2>
+        </td></tr>
+        <tr><td style="padding:28px 32px">
+
+          <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.1em">Customer</p>
+          <p style="margin:0 0 18px;font-size:14px;color:#222">${customerName} &middot; ${customerEmail}</p>
+
+          <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.1em">Description</p>
+          <p style="margin:0 0 18px;font-size:14px;color:#444;line-height:1.6">${description}</p>
+
+          ${budget ? `
+          <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.1em">Budget Range</p>
+          <p style="margin:0 0 18px;font-size:14px;color:#444">${budget}</p>
+          ` : ""}
+
+          <div style="margin-top:24px;text-align:center">
+            <a href="${SITE_URL}/profile?section=admin-orders" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:11px 28px;border-radius:50px;font-size:13px;font-weight:700">
+              View in Admin Panel &rarr;
+            </a>
+          </div>
+
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function adminLowStockEmail(products: { name: string; stock: number }[]) {
+  const rows = products.map((p) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;color:#222;font-family:Arial,sans-serif">${p.name}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;font-weight:700;color:${p.stock === 0 ? "#dc2626" : C.accent};text-align:right;font-family:Arial,sans-serif">
+        ${p.stock === 0 ? "Out of stock" : `${p.stock} left`}
+      </td>
+    </tr>`).join("");
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#e8e8e8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px">
+    <tr><td align="center">
+      <table width="100%" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden" cellpadding="0" cellspacing="0">
+        <tr><td style="background:#b45309;padding:22px 32px">
+          <p style="margin:0;color:rgba(255,255,255,0.7);font-size:11px;letter-spacing:0.15em;text-transform:uppercase">&#9888;&#65039; Stock Alert</p>
+          <h2 style="margin:4px 0 0;color:#fff;font-size:22px;font-weight:700">${products.length} product(s) running low</h2>
+        </td></tr>
+        <tr><td style="padding:28px 32px">
+
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding-bottom:8px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid #eee">Product</td>
+              <td style="padding-bottom:8px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.1em;border-bottom:1px solid #eee;text-align:right">Stock</td>
+            </tr>
+            ${rows}
+          </table>
+
+          <div style="margin-top:24px;text-align:center">
+            <a href="${SITE_URL}/profile?section=admin-products" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:11px 28px;border-radius:50px;font-size:13px;font-weight:700">
+              Manage Products &rarr;
+            </a>
+          </div>
+
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
 function adminNewOrderEmail(order: Order, custEmail: string) {
   const items = order.order_items as Item[];
   const addr  = order.shipping_address as Addr;
@@ -689,6 +768,30 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true }), { headers: CORS });
     }
 
+    // ── Custom order request → notify admin ──
+    if (event === "custom_order_request") {
+      const { customerName, customerEmail, description, budget } = body;
+      await sendEmail(
+        ADMIN_EMAIL,
+        `\u{1F3A8} New Custom Order Request from ${customerName || "a customer"}`,
+        adminCustomOrderEmail(customerName, customerEmail, description, budget),
+      );
+      return new Response(JSON.stringify({ success: true }), { headers: CORS });
+    }
+
+    // ── Low stock alert → notify admin ──
+    if (event === "low_stock_alert") {
+      const { products: lowStockProducts } = body;
+      if (lowStockProducts?.length) {
+        await sendEmail(
+          ADMIN_EMAIL,
+          `\u26A0\uFE0F Low Stock Alert \u2013 ${lowStockProducts.length} product(s)`,
+          adminLowStockEmail(lowStockProducts),
+        );
+      }
+      return new Response(JSON.stringify({ success: true }), { headers: CORS });
+    }
+
     // ── Order status emails ──
     const cfg = EVENTS[event];
     if (!cfg) throw new Error(`Unknown event: ${event}`);
@@ -722,6 +825,24 @@ serve(async (req) => {
         `New Order ${oid} \u2013 \u20B9${order.total} (${order.payment_method === "cod" ? "COD" : "Paid"})`,
         adminNewOrderEmail(order, custEmail),
       ));
+
+      // Low stock check — alert admin for products with stock <= 2 after this order
+      const productIds = (order.order_items as Item[]).map((i: Record<string, unknown>) => i.product_id as string).filter(Boolean);
+      if (productIds.length) {
+        const { data: lowStock } = await supabase
+          .from("products")
+          .select("name, stock")
+          .in("id", productIds)
+          .lte("stock", 2);
+
+        if (lowStock?.length) {
+          tasks.push(sendEmail(
+            ADMIN_EMAIL,
+            `\u26A0\uFE0F Low Stock Alert \u2013 ${lowStock.length} product(s)`,
+            adminLowStockEmail(lowStock),
+          ));
+        }
+      }
     }
 
     await Promise.all(tasks);

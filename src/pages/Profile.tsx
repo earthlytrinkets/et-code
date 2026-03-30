@@ -1055,6 +1055,21 @@ const ProfilePage = () => {
     enabled: !!user,
   });
 
+  // Count new (confirmed) orders for admin badge
+  const { data: newOrderCount = 0 } = useQuery({
+    queryKey: ["admin-new-order-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "confirmed");
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user && isAdmin,
+    refetchInterval: 30_000, // poll every 30s
+  });
+
   const { data: addresses = [], isLoading: addressesLoading } = useQuery({
     queryKey: ["addresses", user?.id],
     queryFn: async () => {
@@ -1162,6 +1177,11 @@ const ProfilePage = () => {
                     {item.id === "addresses" && addresses.length > 0 && (
                       <span className="rounded-full bg-secondary px-1.5 py-0.5 font-body text-[10px] font-semibold text-muted-foreground">
                         {addresses.length}
+                      </span>
+                    )}
+                    {item.id === "admin-orders" && newOrderCount > 0 && (
+                      <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-semibold text-primary-foreground">
+                        {newOrderCount}
                       </span>
                     )}
                     <ChevronRight

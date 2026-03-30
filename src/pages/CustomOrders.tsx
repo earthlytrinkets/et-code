@@ -42,6 +42,16 @@ const CustomOrders = () => {
       toast.error("Failed to submit request. Please try again.");
     } else {
       setSubmitted(true);
+      // Notify admin about the custom order request
+      supabase.functions.invoke("send-order-email", {
+        body: {
+          event: "custom_order_request",
+          customerName: name,
+          customerEmail: email,
+          description,
+          budget: budget || null,
+        },
+      }).catch(console.error);
     }
     setLoading(false);
   };
