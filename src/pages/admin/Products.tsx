@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useCategories } from "@/hooks/useProducts";
@@ -209,8 +210,8 @@ const ProductFormModal = ({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-2xl rounded-2xl bg-card p-6 shadow-elevated my-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-display text-xl font-bold text-foreground">
@@ -341,7 +342,8 @@ const ProductFormModal = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

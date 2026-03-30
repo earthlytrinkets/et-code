@@ -170,19 +170,19 @@ const Cart = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     type="text"
                     value={couponInput}
                     onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
                     onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
                     placeholder="Enter code"
-                    className="flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+                    className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
                   />
                   <button
                     onClick={handleApplyCoupon}
                     disabled={couponLoading || !couponInput.trim()}
-                    className="rounded-lg bg-secondary px-4 py-2 font-body text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
+                    className="shrink-0 rounded-lg bg-secondary px-4 py-2 font-body text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
                   >
                     {couponLoading ? <Loader2 size={14} className="animate-spin" /> : "Apply"}
                   </button>

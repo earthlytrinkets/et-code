@@ -268,15 +268,13 @@ function orderShippedEmail(order: Order) {
         ${method === "shiprocket" ? "Shiprocket Tracking" : "Tracking / AWB Number"}
       </p>
       <p style="margin:0;font-size:20px;font-weight:700;color:${C.text};font-family:Arial,sans-serif;letter-spacing:0.06em">${awb}</p>
-      ${method === "shiprocket"
-        ? `<p style="margin:8px 0 0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif">
-            Track at <a href="https://shiprocket.co/tracking/${awb}" style="color:${C.green};text-decoration:none">shiprocket.co/tracking</a>
-           </p>`
-        : ""}
+      <p style="margin:8px 0 0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif">
+        Track at <a href="https://shiprocket.co/tracking/${awb}" style="color:${C.green};text-decoration:none">shiprocket.co/tracking</a>
+      </p>
     </div>` : ""}
 
     ${addressBlock(addr)}
-    ${ctaButton("Track Your Order &rarr;", awb && method === "shiprocket" ? `https://shiprocket.co/tracking/${awb}` : `${SITE_URL}/profile`)}`
+    ${ctaButton("Track Your Order &rarr;", awb ? `https://shiprocket.co/tracking/${awb}` : `${SITE_URL}/profile`)}`
   );
 }
 

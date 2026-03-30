@@ -27,19 +27,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq("id", user.id)
       .maybeSingle();
 
+    const welcomeKey = `et_welcome_sent_${user.id}`;
+
     if (!existing) {
       await supabase.from("profiles").insert({ id: user.id, full_name: name, avatar_url: avatar });
       // Send welcome email for new Google OAuth sign-ups
-      if (user.email) {
+      if (user.email && !localStorage.getItem(welcomeKey)) {
+        localStorage.setItem(welcomeKey, "1");
         supabase.functions.invoke("send-order-email", {
           body: { event: "welcome", email: user.email, name: name ?? "" },
         }).catch(console.error);
       }
     } else {
       // Profile auto-created by handle_new_user() trigger — detect new user
-      // by checking if the profile was created within the last 10 seconds
-      const isNewUser = (Date.now() - new Date(existing.created_at).getTime()) < 10_000;
-      if (isNewUser && user.email) {
+      // by checking the localStorage flag (avoids fragile time-window heuristics)
+      const isNewUser = !localStorage.getItem(welcomeKey);
+      // Only send once: within 2 minutes of account creation to avoid sending
+      // on returning logins where localStorage was cleared
+      const accountAge = Date.now() - new Date(user.created_at).getTime();
+      if (isNewUser && accountAge < 120_000 && user.email) {
+        localStorage.setItem(welcomeKey, "1");
         supabase.functions.invoke("send-order-email", {
           body: { event: "welcome", email: user.email, name: name ?? "" },
         }).catch(console.error);

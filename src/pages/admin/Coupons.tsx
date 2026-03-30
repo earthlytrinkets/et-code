@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
@@ -155,8 +156,8 @@ const CouponModal = ({
     onError: (error: Error) => toast.error(error.message),
   });
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-4">
       <div className="my-8 w-full max-w-3xl rounded-2xl bg-card p-6 shadow-elevated">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-display text-xl font-bold text-foreground">
@@ -313,7 +314,8 @@ const CouponModal = ({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
