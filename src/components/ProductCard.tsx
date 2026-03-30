@@ -1,16 +1,13 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { ShoppingBag, Plus, Minus, Star } from "lucide-react";
 import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
-import { queueCartAuthIntent } from "@/lib/auth-intent";
 
 const ProductCard = ({ product }: { product: Product }) => {
   const { items, addToCart, updateQuantity } = useCart();
-  const { user } = useAuth();
   const { isAdmin, roleChecked } = useIsAdmin();
 
   const cartItem = items.find((i) => i.product.id === product.id);

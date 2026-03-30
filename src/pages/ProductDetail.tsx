@@ -220,12 +220,7 @@ const ProductDetail = () => {
                 ) : qty === 0 ? (
                   <button
                     onClick={() => {
-                      const cartProduct = { id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock };
-                      if (!user) {
-                        queueCartAuthIntent(cartProduct);
-                        return;
-                      }
-                      addToCart(cartProduct);
+                      addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
                     }}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow md:w-auto"
                   >
@@ -244,12 +239,7 @@ const ProductDetail = () => {
                       <span className="min-w-[48px] text-center font-display text-base font-bold text-foreground">{qty}</span>
                       <button
                         onClick={() => {
-                          const cartProduct = { id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock };
-                          if (!user) {
-                            queueCartAuthIntent(cartProduct);
-                            return;
-                          }
-                          addToCart(cartProduct);
+                          addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
                         }}
                         className="flex h-12 w-12 items-center justify-center rounded-full text-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
                       >
@@ -257,13 +247,7 @@ const ProductDetail = () => {
                       </button>
                     </div>
                     <button
-                      onClick={() => {
-                        if (!user) {
-                          queueAuthRedirect("/cart");
-                          return;
-                        }
-                        navigate("/cart");
-                      }}
+                      onClick={() => navigate("/cart")}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
                     >
                       Proceed to Checkout <ArrowRight size={15} />
