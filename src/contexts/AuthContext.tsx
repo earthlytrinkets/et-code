@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -15,6 +15,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // In-memory guard prevents duplicate welcome emails when onAuthStateChange
+  // fires multiple times before updateUser() propagates
+  const welcomeSending = useRef(false);
 
   const syncGoogleProfile = async (user: User) => {
     const meta = user.user_metadata;
@@ -38,9 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await supabase.from("profiles").update(updates).eq("id", user.id);
     }
 
-    // Send welcome email exactly once — tracked via user_metadata (server-side,
-    // works across devices/browsers unlike localStorage)
-    if (user.email && !meta?.welcome_email_sent) {
+    // Send welcome email exactly once
+    // - user_metadata flag: persists across devices/sessions (server-side)
+    // - welcomeSending ref: prevents races within the same session
+    if (user.email && !meta?.welcome_email_sent && !welcomeSending.current) {
+      welcomeSending.current = true;
       await supabase.auth.updateUser({ data: { welcome_email_sent: true } });
       supabase.functions.invoke("send-order-email", {
         body: { event: "welcome", email: user.email, name: name ?? "" },
