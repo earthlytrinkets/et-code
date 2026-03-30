@@ -262,7 +262,7 @@ const ProductDetail = () => {
                           queueAuthRedirect("/cart");
                           return;
                         }
-                        navigate("/checkout/address");
+                        navigate("/cart");
                       }}
                       className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
                     >
