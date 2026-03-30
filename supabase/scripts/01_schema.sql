@@ -397,12 +397,10 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 
 ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public can read active coupons"
-  ON public.coupons FOR SELECT
-  USING (is_active = true);
-
+-- No public SELECT — coupon codes are secret; validate_coupon_code() is SECURITY DEFINER
+-- and reads the table internally. Only admins can browse/manage coupons.
 CREATE POLICY "Admins can manage coupons"
-  ON public.coupons FOR ALL
+  ON public.coupons FOR ALL TO authenticated
   USING (public.has_role(auth.uid(), 'admin'::app_role));
 
 CREATE OR REPLACE FUNCTION public.validate_coupon_code(
