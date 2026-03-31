@@ -77,3 +77,38 @@ CREATE POLICY "Users update own avatar" ON storage.objects
 CREATE POLICY "Users delete own avatar" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+
+-- ─── Custom Order Reference Images ──────────────────────────────────────────
+-- Public read so admin can view; authenticated users upload to their own folder
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'custom-order-images', 'custom-order-images', true,
+  10485760,  -- 10 MB per file
+  ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public             = true,
+  file_size_limit    = 10485760,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+DROP POLICY IF EXISTS "Public read custom order images"       ON storage.objects;
+DROP POLICY IF EXISTS "Users upload own custom order images"   ON storage.objects;
+DROP POLICY IF EXISTS "Users delete own custom order images"   ON storage.objects;
+DROP POLICY IF EXISTS "Admins delete custom order images"      ON storage.objects;
+
+CREATE POLICY "Public read custom order images" ON storage.objects
+  FOR SELECT USING (bucket_id = 'custom-order-images');
+
+CREATE POLICY "Users upload own custom order images" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Users delete own custom order images" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Admins delete custom order images" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'custom-order-images' AND public.has_role(auth.uid(), 'admin'::app_role));

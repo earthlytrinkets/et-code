@@ -1,28 +1,58 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { motion } from "framer-motion";
-import { Upload, Send } from "lucide-react";
+import { Upload, Send, X, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const budgetRanges = ["₹500 - ₹1,000", "₹1,000 - ₹2,500", "₹2,500 - ₹5,000", "₹5,000+"];
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const DRAFT_KEY = "et_custom_order_draft";
+
+interface PreviewFile {
+  file: File;
+  preview: string;
+}
+
+interface Draft {
+  name: string;
+  email: string;
+  description: string;
+  budget: string;
+}
+
+const saveDraft = (d: Draft) => sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+const loadDraft = (): Draft | null => {
+  const raw = sessionStorage.getItem(DRAFT_KEY);
+  if (!raw) return null;
+  sessionStorage.removeItem(DRAFT_KEY);
+  try { return JSON.parse(raw); } catch { return null; }
+};
 
 const CustomOrders = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const draft = useRef(loadDraft());
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [description, setDescription] = useState("");
-  const [budget, setBudget] = useState("");
-  // Redirect unauthenticated users; redirect admins in the background
+  const [name, setName] = useState(draft.current?.name ?? "");
+  const [email, setEmail] = useState(draft.current?.email ?? "");
+  const [description, setDescription] = useState(draft.current?.description ?? "");
+  const [budget, setBudget] = useState(draft.current?.budget ?? "");
+  const [files, setFiles] = useState<PreviewFile[]>([]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  // Redirect admins
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate("/", { replace: true }); return; }
+    if (authLoading || !user) return;
     supabase
       .from("user_roles")
       .select("role")
@@ -32,17 +62,92 @@ const CustomOrders = () => {
       .then(({ data }) => { if (data) navigate("/admin/orders", { replace: true }); });
   }, [user, authLoading, navigate]);
 
+  // Pre-fill name & email from profile only when fields are empty
+  useEffect(() => {
+    if (!user) return;
+    setEmail((prev) => prev || user.email || "");
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.full_name) setName((prev) => prev || data.full_name);
+      });
+  }, [user]);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => files.forEach((f) => URL.revokeObjectURL(f.preview));
+  }, [files]);
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const accepted: PreviewFile[] = [];
+    for (const file of Array.from(incoming)) {
+      if (files.length + accepted.length >= MAX_FILES) {
+        toast.error(`Maximum ${MAX_FILES} images allowed`);
+        break;
+      }
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`${file.name} exceeds 10 MB limit`);
+        continue;
+      }
+      accepted.push({ file, preview: URL.createObjectURL(file) });
+    }
+    if (accepted.length) setFiles((prev) => [...prev, ...accepted]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadImages = async (): Promise<string[]> => {
+    if (!files.length || !user) return [];
+    const urls: string[] = [];
+    for (const { file } of files) {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("custom-order-images")
+        .upload(path, file, { contentType: file.type });
+      if (error) {
+        toast.error(`Failed to upload ${file.name}`);
+        throw error;
+      }
+      urls.push(`${SUPABASE_URL}/storage/v1/object/public/custom-order-images/${path}`);
+    }
+    return urls;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      saveDraft({ name, email, description, budget });
+      setAuthModalOpen(true);
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase
-      .from("custom_orders" as never)
-      .insert({ name, email, description, budget_range: budget || null } as never);
-    if (error) {
-      toast.error("Failed to submit request. Please try again.");
-    } else {
+    try {
+      const imageUrls = await uploadImages();
+      const { error } = await supabase
+        .from("custom_orders")
+        .insert({
+          name,
+          email,
+          description,
+          budget_range: budget || null,
+          user_id: user.id,
+          reference_images: imageUrls,
+        });
+      if (error) throw error;
       setSubmitted(true);
-      // Notify admin about the custom order request
       supabase.functions.invoke("send-order-email", {
         body: {
           event: "custom_order_request",
@@ -52,14 +157,24 @@ const CustomOrders = () => {
           budget: budget || null,
         },
       }).catch(console.error);
+    } catch {
+      toast.error("Failed to submit request. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
   };
 
   return (
     <div className="min-h-screen">
       <Navbar />
-      {!authLoading && user && <main className="container mx-auto px-4 py-12 lg:px-8">
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      {!authLoading && <main className="container mx-auto px-4 py-12 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">Made just for you</p>
           <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">Custom Orders</h1>
@@ -69,7 +184,7 @@ const CustomOrders = () => {
 
           {submitted ? (
             <div className="mt-12 rounded-xl bg-card p-12 text-center shadow-soft">
-              <p className="font-display text-xl font-semibold text-foreground">✨ Request Submitted!</p>
+              <p className="font-display text-xl font-semibold text-foreground">Request Submitted!</p>
               <p className="mt-2 font-body text-sm text-muted-foreground">We'll get back to you within 48 hours.</p>
             </div>
           ) : (
@@ -133,13 +248,61 @@ const CustomOrders = () => {
               </div>
 
               <div>
-                <label className="font-body text-sm font-medium text-foreground">Reference Image (optional)</label>
-                <div className="mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-8 text-center transition-colors hover:border-primary/50">
+                <label className="font-body text-sm font-medium text-foreground">
+                  Reference Images <span className="text-muted-foreground font-normal">(optional, up to {MAX_FILES})</span>
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={(e) => { if (e.target.files?.length) addFiles(e.target.files); e.target.value = ""; }}
+                />
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  className={`mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed bg-card p-8 text-center transition-colors cursor-pointer ${
+                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  }`}
+                >
                   <div>
                     <Upload size={24} className="mx-auto text-muted-foreground" />
                     <p className="mt-2 font-body text-xs text-muted-foreground">Click or drag to upload</p>
+                    <p className="mt-1 font-body text-[10px] text-muted-foreground/60">JPG, PNG, WebP — max 10 MB each</p>
                   </div>
                 </div>
+
+                {files.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    {files.map((f, i) => (
+                      <div key={i} className="group relative h-20 w-20 overflow-hidden rounded-lg border border-border">
+                        <img src={f.preview} alt={f.file.name} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <X size={16} className="text-white" />
+                        </button>
+                      </div>
+                    ))}
+                    {files.length < MAX_FILES && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+                      >
+                        <ImageIcon size={20} />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button

@@ -142,7 +142,9 @@ export type Database = {
           email: string
           id: string
           name: string
+          reference_images: string[]
           status: string
+          user_id: string | null
         }
         Insert: {
           budget_range?: string | null
@@ -151,7 +153,9 @@ export type Database = {
           email: string
           id?: string
           name: string
+          reference_images?: string[]
           status?: string
+          user_id?: string | null
         }
         Update: {
           budget_range?: string | null
@@ -160,7 +164,9 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          reference_images?: string[]
           status?: string
+          user_id?: string | null
         }
         Relationships: []
       }
