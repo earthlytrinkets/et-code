@@ -166,15 +166,20 @@ export const AdminSubscribersSection = () => {
       );
       return { previous };
     },
-    onSuccess: () => toast.success("Subscriber updated"),
+    onSuccess: (_data, { id, newStatus }) => {
+      // Update all filter caches so switching tabs is consistent
+      for (const filter of ["all", "active", "unsubscribed"] as const) {
+        queryClient.setQueryData<Subscriber[]>(["admin-subscribers", filter], (old) =>
+          old?.map((s) => (s.id === id ? { ...s, status: newStatus as Subscriber["status"] } : s))
+        );
+      }
+      toast.success("Subscriber updated");
+    },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
         queryClient.setQueryData(["admin-subscribers", statusFilter], context.previous);
       }
       toast.error("Failed to update subscriber");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
     },
   });
 

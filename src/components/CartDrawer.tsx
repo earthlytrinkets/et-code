@@ -197,7 +197,9 @@ const CartDrawer = () => {
               <div className="border-t border-border px-5 py-4 space-y-3">
                 {/* Coupon */}
                 {!user ? (
-                  <p className="font-body text-xs text-muted-foreground">Sign in to apply a coupon code</p>
+                  <p className="font-body text-xs text-muted-foreground">
+                    <button onClick={() => { closeDrawer(); window.dispatchEvent(new Event(OPEN_AUTH_EVENT)); }} className="text-primary font-medium hover:underline">Sign in</button> to apply a coupon code
+                  </p>
                 ) : (
                   <div>
                     {appliedCoupon ? (

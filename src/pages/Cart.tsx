@@ -152,7 +152,9 @@ const Cart = () => {
             <div>
               <p className="font-body text-sm font-medium text-foreground mb-2">Have a coupon?</p>
               {!user ? (
-                <p className="font-body text-xs text-muted-foreground">Sign in to apply a coupon code</p>
+                <p className="font-body text-xs text-muted-foreground">
+                  <button onClick={() => setAuthModalOpen(true)} className="text-primary font-medium hover:underline">Sign in</button> to apply a coupon code
+                </p>
               ) : appliedCoupon ? (
                 <div className="flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2">
                   <div className="flex items-center gap-2">
@@ -235,7 +237,7 @@ const Cart = () => {
             </button>
             {!user && (
               <p className="text-center font-body text-xs text-muted-foreground">
-                You'll need to sign in to place an order
+                You'll need to <button onClick={() => setAuthModalOpen(true)} className="text-primary font-medium hover:underline">sign in</button> to place an order
               </p>
             )}
             {user && (
