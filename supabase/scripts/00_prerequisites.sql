@@ -104,6 +104,15 @@ BEGIN
   VALUES (NEW.id, 'user')
   ON CONFLICT (user_id, role) DO NOTHING;
 
+  IF to_regclass('public.subscribers') IS NOT NULL
+     AND NEW.email IS NOT NULL
+     AND length(trim(NEW.email)) > 0 THEN
+    INSERT INTO public.subscribers (email, status)
+    VALUES (lower(trim(NEW.email)), 'active')
+    ON CONFLICT (email) DO UPDATE
+      SET status = 'active';
+  END IF;
+
   RETURN NEW;
 END;
 $$;

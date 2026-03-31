@@ -93,6 +93,15 @@ BEGIN
   VALUES (NEW.id, 'user')
   ON CONFLICT (user_id, role) DO NOTHING;
 
+  IF to_regclass('public.subscribers') IS NOT NULL
+     AND NEW.email IS NOT NULL
+     AND length(trim(NEW.email)) > 0 THEN
+    INSERT INTO public.subscribers (email, status)
+    VALUES (lower(trim(NEW.email)), 'active')
+    ON CONFLICT (email) DO UPDATE
+      SET status = 'active';
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -106,4 +115,3 @@ DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
