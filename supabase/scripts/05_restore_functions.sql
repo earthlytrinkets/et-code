@@ -204,6 +204,43 @@ GRANT EXECUTE ON FUNCTION public.validate_coupon_code(TEXT, UUID, NUMERIC) TO au
 
 -- 5. Ensure subscribers table has correct CHECK constraint and RLS policies
 -- (Re-create policies idempotently)
+
+-- 5a. Fix status column: codex agent may have changed it to an enum type.
+--     Convert back to TEXT, normalise data, and re-add correct CHECK constraint.
+
+-- Drop all existing CHECK constraints on subscribers first
+DO $$
+DECLARE
+  c TEXT;
+BEGIN
+  FOR c IN
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'public.subscribers'::regclass
+      AND contype = 'c'
+  LOOP
+    EXECUTE 'ALTER TABLE public.subscribers DROP CONSTRAINT IF EXISTS ' || quote_ident(c);
+  END LOOP;
+END;
+$$;
+
+-- Convert column to TEXT (harmless no-op if already TEXT)
+ALTER TABLE public.subscribers
+  ALTER COLUMN status TYPE TEXT USING status::TEXT;
+
+-- Normalise any invalid status values
+UPDATE public.subscribers
+SET status = 'active'
+WHERE status NOT IN ('active', 'unsubscribed');
+
+-- Set correct default
+ALTER TABLE public.subscribers
+  ALTER COLUMN status SET DEFAULT 'active';
+
+-- Re-add the correct constraint
+ALTER TABLE public.subscribers
+  ADD CONSTRAINT subscribers_status_check
+  CHECK (status IN ('active', 'unsubscribed'));
+
 ALTER TABLE public.subscribers ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can subscribe" ON public.subscribers;
@@ -231,7 +268,8 @@ CREATE POLICY "Admins can update subscribers"
       WHERE user_roles.user_id = auth.uid()
         AND user_roles.role = 'admin'::app_role
     )
-  );
+  )
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Admins can delete subscribers" ON public.subscribers;
 CREATE POLICY "Admins can delete subscribers"

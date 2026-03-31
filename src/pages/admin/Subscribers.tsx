@@ -158,11 +158,24 @@ export const AdminSubscribersSection = () => {
         .eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
-      toast.success("Subscriber updated");
+    onMutate: async ({ id, newStatus }) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-subscribers", statusFilter] });
+      const previous = queryClient.getQueryData<Subscriber[]>(["admin-subscribers", statusFilter]);
+      queryClient.setQueryData<Subscriber[]>(["admin-subscribers", statusFilter], (old) =>
+        old?.map((s) => (s.id === id ? { ...s, status: newStatus as Subscriber["status"] } : s))
+      );
+      return { previous };
     },
-    onError: () => toast.error("Failed to update subscriber"),
+    onSuccess: () => toast.success("Subscriber updated"),
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["admin-subscribers", statusFilter], context.previous);
+      }
+      toast.error("Failed to update subscriber");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
+    },
   });
 
   const deleteSubscriber = useMutation({
