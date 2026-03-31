@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CheckoutAddress {
   id: string;
@@ -63,12 +64,20 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
     saveSession({ selectedAddress, appliedCoupon: coupon, discountAmount: amount });
   };
 
-  const clearCheckout = () => {
+  const clearCheckout = useCallback(() => {
     setSelectedAddress(null);
     setAppliedCoupon(null);
     setDiscountAmount(0);
     sessionStorage.removeItem(SESSION_KEY);
-  };
+  }, []);
+
+  // Clear checkout state on sign-out
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") clearCheckout();
+    });
+    return () => subscription.unsubscribe();
+  }, [clearCheckout]);
 
   return (
     <CheckoutContext.Provider value={{ selectedAddress, appliedCoupon, discountAmount, setAddress, setCoupon, clearCheckout }}>
