@@ -1086,7 +1086,21 @@ const ProfilePage = () => {
       return count ?? 0;
     },
     enabled: !!user && isAdmin,
-    refetchInterval: 30_000, // poll every 30s
+    refetchInterval: 30_000,
+  });
+
+  const { data: newCustomOrderCount = 0 } = useQuery({
+    queryKey: ["admin-new-custom-order-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("custom_orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "new");
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user && isAdmin,
+    refetchInterval: 30_000,
   });
 
   const { data: addresses = [], isLoading: addressesLoading } = useQuery({
@@ -1232,6 +1246,11 @@ const ProfilePage = () => {
                     {item.id === "admin-orders" && newOrderCount > 0 && (
                       <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-semibold text-primary-foreground">
                         {newOrderCount}
+                      </span>
+                    )}
+                    {item.id === "admin-custom-orders" && newCustomOrderCount > 0 && (
+                      <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-semibold text-primary-foreground">
+                        {newCustomOrderCount}
                       </span>
                     )}
                     <ChevronRight
