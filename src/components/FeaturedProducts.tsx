@@ -73,8 +73,18 @@ const FeaturedProducts = () => {
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-[3/4] w-[calc(50%-36px)] shrink-0 animate-pulse rounded-2xl bg-secondary lg:w-[calc(25%-30px)]"
-                  />
+                    className="w-[calc(50%-36px)] shrink-0 animate-pulse rounded-2xl border border-border bg-card overflow-hidden lg:w-[calc(25%-30px)]"
+                  >
+                    <div className="aspect-square bg-secondary" />
+                    <div className="p-4 space-y-2.5">
+                      <div className="h-3 w-16 rounded bg-secondary" />
+                      <div className="h-4 w-3/4 rounded bg-secondary" />
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="h-4 w-16 rounded bg-secondary" />
+                        <div className="h-8 w-8 rounded-full bg-secondary" />
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : (

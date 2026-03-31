@@ -217,9 +217,16 @@ export const AdminSubscribersSection = () => {
 
       {/* List */}
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-xl bg-secondary" />
+            <div key={i} className="flex items-center gap-4 animate-pulse rounded-xl border border-border bg-card px-5 py-3">
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="h-3.5 w-44 rounded bg-secondary" />
+                <div className="h-2.5 w-24 rounded bg-secondary" />
+              </div>
+              <div className="h-5 w-16 rounded-full bg-secondary" />
+              <div className="h-7 w-7 rounded-lg bg-secondary" />
+            </div>
           ))}
         </div>
       ) : subscribers.length === 0 ? (

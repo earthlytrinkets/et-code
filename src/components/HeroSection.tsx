@@ -60,6 +60,7 @@ const HeroSection = () => {
               src={heroImage}
               alt="Handcrafted epoxy resin jewellery"
               className="w-full rounded-2xl object-cover shadow-elevated"
+              loading="eager"
             />
             <div className="absolute -bottom-4 -left-4 rounded-xl bg-card/95 backdrop-blur-sm p-4 shadow-elevated">
               <p className="font-display text-xl font-bold text-primary">Now Live ✨</p>

@@ -106,7 +106,17 @@ const Shop = () => {
         {isLoading ? (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="aspect-square animate-pulse rounded-lg bg-secondary" />
+              <div key={i} className="animate-pulse rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="aspect-square bg-secondary" />
+                <div className="p-4 space-y-2.5">
+                  <div className="h-3 w-16 rounded bg-secondary" />
+                  <div className="h-4 w-3/4 rounded bg-secondary" />
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="h-4 w-16 rounded bg-secondary" />
+                    <div className="h-8 w-8 rounded-full bg-secondary" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : (

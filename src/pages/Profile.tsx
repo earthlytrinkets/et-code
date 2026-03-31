@@ -833,7 +833,28 @@ const OrdersSection = ({ userId }: { userId: string }) => {
 
       {isLoading ? (
         <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-secondary" />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="animate-pulse rounded-xl border border-border bg-card px-5 py-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-10 rounded bg-secondary" />
+                  <div className="h-3.5 w-24 rounded bg-secondary" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-8 rounded bg-secondary" />
+                  <div className="h-3.5 w-16 rounded bg-secondary" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-10 rounded bg-secondary" />
+                  <div className="h-3.5 w-20 rounded bg-secondary" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-10 rounded bg-secondary" />
+                  <div className="h-5 w-20 rounded-full bg-secondary" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : orders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-16 text-center">
@@ -1099,8 +1120,39 @@ const ProfilePage = () => {
 
   if (loading || profileLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-10 lg:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+            <aside className="w-full shrink-0 lg:w-64 space-y-4">
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+                <div className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-secondary" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-28 animate-pulse rounded bg-secondary" />
+                  <div className="h-3 w-36 animate-pulse rounded bg-secondary" />
+                </div>
+              </div>
+              <div className="space-y-1 rounded-2xl border border-border bg-card p-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-12 animate-pulse rounded-xl bg-secondary" />
+                ))}
+              </div>
+            </aside>
+            <div className="flex-1 min-w-0">
+              <div className="rounded-2xl border border-border bg-card p-6 lg:p-8 space-y-6">
+                <div className="h-6 w-40 animate-pulse rounded bg-secondary" />
+                <div className="flex flex-col items-center gap-4 sm:flex-row">
+                  <div className="h-24 w-24 animate-pulse rounded-full bg-secondary" />
+                  <div className="flex-1 space-y-3 w-full">
+                    <div className="h-10 animate-pulse rounded-lg bg-secondary" />
+                    <div className="h-10 animate-pulse rounded-lg bg-secondary" />
+                    <div className="h-10 animate-pulse rounded-lg bg-secondary" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
@@ -1213,8 +1265,14 @@ const ProfilePage = () => {
 
               {activeSection === "addresses" && (
                 addressesLoading ? (
-                  <div className="flex justify-center py-16">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="h-6 w-36 animate-pulse rounded bg-secondary" />
+                      <div className="h-9 w-32 animate-pulse rounded-lg bg-secondary" />
+                    </div>
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div key={i} className="h-28 animate-pulse rounded-xl bg-secondary" />
+                    ))}
                   </div>
                 ) : (
                   <AddressesSection

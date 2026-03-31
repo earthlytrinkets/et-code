@@ -521,9 +521,25 @@ export const AdminProductsSection = () => {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">
+        <div className="overflow-hidden rounded-2xl border border-border">
+          <div className="border-b border-border bg-secondary/40 px-4 py-3 flex gap-8">
+            {["w-8", "w-32", "w-20", "w-16", "w-12", "w-16", "w-16"].map((w, i) => (
+              <div key={i} className={`h-3 ${w} rounded bg-secondary`} />
+            ))}
+          </div>
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse rounded-xl bg-secondary" />
+            <div key={i} className="flex items-center gap-4 border-b border-border px-4 py-3 animate-pulse">
+              <div className="h-4 w-4 rounded bg-secondary" />
+              <div className="flex items-center gap-3 flex-1">
+                <div className="h-10 w-10 rounded-lg bg-secondary" />
+                <div className="h-3.5 w-32 rounded bg-secondary" />
+              </div>
+              <div className="h-3.5 w-20 rounded bg-secondary" />
+              <div className="h-3.5 w-14 rounded bg-secondary" />
+              <div className="h-3.5 w-10 rounded bg-secondary" />
+              <div className="h-5 w-14 rounded-full bg-secondary" />
+              <div className="h-3.5 w-16 rounded bg-secondary" />
+            </div>
           ))}
         </div>
       ) : (

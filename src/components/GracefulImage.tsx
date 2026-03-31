@@ -5,7 +5,7 @@ interface GracefulImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   wrapperClassName?: string;
 }
 
-const GracefulImage = ({ src, alt, className, wrapperClassName, ...props }: GracefulImageProps) => {
+const GracefulImage = ({ src, alt, className, wrapperClassName, loading = "lazy", ...props }: GracefulImageProps) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
@@ -17,7 +17,7 @@ const GracefulImage = ({ src, alt, className, wrapperClassName, ...props }: Grac
       <img
         src={src}
         alt={alt}
-        loading="eager"
+        loading={loading}
         className={cn(
           "transition-opacity duration-200 ease-out",
           loaded ? "opacity-100" : "opacity-0",
