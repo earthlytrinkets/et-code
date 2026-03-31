@@ -35,7 +35,7 @@ const HeroSection = () => {
               to="/shop"
               className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
             >
-              Explore Collection
+              Explore All Our Collection
               <ArrowRight size={16} />
             </Link>
             {!(roleChecked && isAdmin) && (
