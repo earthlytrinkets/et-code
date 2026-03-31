@@ -348,6 +348,48 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO anon, authenticated;
 
+-- RPC: fetch top 5-star reviews from verified buyers (across all products)
+-- Used by the homepage testimonial carousel
+CREATE OR REPLACE FUNCTION public.get_verified_top_reviews(p_limit INT DEFAULT 10)
+RETURNS TABLE (
+  id UUID,
+  rating INT,
+  comment TEXT,
+  created_at TIMESTAMPTZ,
+  product_name TEXT,
+  reviewer_name TEXT
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    r.id,
+    r.rating::INT,
+    r.comment::TEXT,
+    r.created_at,
+    p.name::TEXT AS product_name,
+    pr.full_name::TEXT AS reviewer_name
+  FROM reviews r
+  JOIN products p ON p.id = r.product_id
+  LEFT JOIN profiles pr ON pr.id = r.user_id
+  WHERE r.rating = 5
+    AND r.comment IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE oi.product_id = r.product_id
+        AND o.user_id = r.user_id
+        AND o.status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered')
+    )
+  ORDER BY r.created_at DESC
+  LIMIT p_limit;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_verified_top_reviews(INT) TO anon, authenticated;
+
 
 -- ─── Custom Orders ────────────────────────────────────────────────────────────
 -- Stores free-form customer enquiries submitted via the Custom Orders page

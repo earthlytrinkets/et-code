@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Review = {
@@ -16,29 +16,12 @@ const useTopReviews = () =>
   useQuery({
     queryKey: ["top-reviews"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("reviews" as never)
-        .select("id, rating, comment, created_at, products(name), profiles(full_name)")
-        .eq("rating", 5)
-        .not("comment", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data, error } = await (supabase.rpc as Function)(
+        "get_verified_top_reviews",
+        { p_limit: 10 },
+      );
       if (error) throw error;
-      return (data as unknown as {
-        id: string;
-        rating: number;
-        comment: string | null;
-        created_at: string;
-        products: { name: string } | null;
-        profiles: { full_name: string | null } | null;
-      }[]).map((r) => ({
-        id: r.id,
-        rating: r.rating,
-        comment: r.comment,
-        created_at: r.created_at,
-        product_name: r.products?.name ?? "Product",
-        reviewer_name: r.profiles?.full_name ?? null,
-      })) as Review[];
+      return (data ?? []) as Review[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -58,7 +41,7 @@ const ReviewCard = ({ review }: { review: Review }) => (
       ))}
     </div>
     <p className="mt-4 font-body text-sm leading-relaxed text-muted-foreground italic line-clamp-4">
-      "{review.comment}"
+      &ldquo;{review.comment}&rdquo;
     </p>
     <div className="mt-4">
       <p className="font-body text-sm font-semibold text-foreground">
@@ -71,8 +54,10 @@ const ReviewCard = ({ review }: { review: Review }) => (
 
 const TestimonialSection = () => {
   const { data: reviews = [] } = useTopReviews();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [paused, setPaused] = useState(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const setRef = useRef<HTMLDivElement>(null);
+  const posRef = useRef(0);
+  const pausedRef = useRef(false);
 
   const placeholders: Review[] = Array.from({ length: 6 }, (_, i) => ({
     id: `placeholder-${i}`,
@@ -84,24 +69,28 @@ const TestimonialSection = () => {
   }));
 
   const items = reviews.length > 0 ? reviews : placeholders;
-  const displayReviews = [...items, ...items];
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || items.length === 0) return;
+    const track = trackRef.current;
+    const setEl = setRef.current;
+    if (!track || !setEl || items.length === 0) return;
 
     let animId: number;
     let lastTime = 0;
-    const speed = 0.5; // pixels per frame (~30px/sec at 60fps)
+    const speed = 50; // pixels per second
 
     const step = (time: number) => {
-      if (lastTime && !paused) {
-        el.scrollLeft += speed * ((time - lastTime) / 16.67);
-        // Reset scroll when first set is fully scrolled past
-        const halfWidth = el.scrollWidth / 2;
-        if (el.scrollLeft >= halfWidth) {
-          el.scrollLeft -= halfWidth;
+      if (lastTime && !pausedRef.current) {
+        const dt = (time - lastTime) / 1000;
+        posRef.current += speed * dt;
+
+        // setEl.offsetWidth includes the pr-6 padding, giving exact set width
+        const setWidth = setEl.offsetWidth;
+        if (setWidth > 0 && posRef.current >= setWidth) {
+          posRef.current -= setWidth;
         }
+
+        track.style.transform = `translate3d(-${posRef.current}px, 0, 0)`;
       }
       lastTime = time;
       animId = requestAnimationFrame(step);
@@ -109,7 +98,7 @@ const TestimonialSection = () => {
 
     animId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animId);
-  }, [items.length, paused]);
+  }, [items.length]);
 
   return (
     <section className="py-24 overflow-hidden">
@@ -124,18 +113,27 @@ const TestimonialSection = () => {
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onTouchStart={() => setPaused(true)}
-        onTouchEnd={() => setPaused(false)}
-        className="flex gap-6 overflow-x-scroll px-4 lg:px-8 [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {displayReviews.map((review, i) => (
-          <ReviewCard key={`${review.id}-${i}`} review={review} />
-        ))}
+      <div className="overflow-hidden">
+        <div
+          ref={trackRef}
+          className="flex w-max will-change-transform"
+          onMouseEnter={() => { pausedRef.current = true; }}
+          onMouseLeave={() => { pausedRef.current = false; }}
+          onTouchStart={() => { pausedRef.current = true; }}
+          onTouchEnd={() => { pausedRef.current = false; }}
+        >
+          {/* Two identical sets — pr-6 after each set matches the gap between cards */}
+          <div ref={setRef} className="flex gap-6 shrink-0 pr-6">
+            {items.map((review, i) => (
+              <ReviewCard key={`${review.id}-a-${i}`} review={review} />
+            ))}
+          </div>
+          <div className="flex gap-6 shrink-0 pr-6">
+            {items.map((review, i) => (
+              <ReviewCard key={`${review.id}-b-${i}`} review={review} />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -1022,7 +1022,16 @@ const ProfilePage = () => {
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const sectionParam = searchParams.get("section") as Section | null;
-  const [activeSection, setActiveSection] = useState<Section>(sectionParam || "profile");
+  const [activeSection, setActiveSectionRaw] = useState<Section>(sectionParam || "profile");
+
+  // Sync activeSection when the URL search param changes (e.g. navbar "Orders" link)
+  useEffect(() => {
+    if (sectionParam && sectionParam !== activeSection) {
+      setActiveSectionRaw(sectionParam);
+    }
+  }, [sectionParam]);
+
+  const setActiveSection = setActiveSectionRaw;
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { isAdmin } = useIsAdmin();

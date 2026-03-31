@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingBag, Menu, X, Sun, Moon, LogOut, Settings } from "lucide-react";
+import { ShoppingBag, Menu, X, Sun, Moon, LogOut, UserCircle, Package } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -199,7 +199,14 @@ const Navbar = () => {
                         onClick={() => setUserMenuOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
-                        <Settings size={14} /> Settings
+                        <UserCircle size={14} /> Account
+                      </Link>
+                      <Link
+                        to="/profile?section=orders"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      >
+                        <Package size={14} /> Orders
                       </Link>
                       <button
                         onClick={() => { signOut().catch(console.error); setUserMenuOpen(false); navigate('/'); }}
@@ -283,9 +290,9 @@ const Navbar = () => {
                         to="/profile"
                         onClick={() => setMobileOpen(false)}
                         className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        title="Settings"
+                        title="Account"
                       >
-                        <Settings size={16} />
+                        <UserCircle size={16} />
                       </Link>
                       <button
                         onClick={() => { signOut().catch(console.error); setMobileOpen(false); navigate("/"); }}
