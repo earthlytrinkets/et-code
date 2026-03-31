@@ -202,7 +202,7 @@ const Navbar = () => {
                         <UserCircle size={14} /> Account
                       </Link>
                       <Link
-                        to="/profile?section=orders"
+                        to={isAdmin ? "/profile?section=admin-orders" : "/profile?section=orders"}
                         onClick={() => setUserMenuOpen(false)}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 font-body text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >

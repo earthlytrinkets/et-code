@@ -1,17 +1,50 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag, Loader2 } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCheckout } from "@/contexts/CheckoutContext";
 import GracefulImage from "@/components/GracefulImage";
 import { OPEN_AUTH_EVENT } from "@/lib/auth-intent";
+import { supabase } from "@/integrations/supabase/client";
+import { calculateCouponDiscount, type ManagedCoupon } from "@/lib/coupons";
 
 const CartDrawer = () => {
   const { items, updateQuantity, removeFromCart, totalItems, totalPrice, drawerOpen, closeDrawer } = useCart();
   const { user } = useAuth();
+  const { setCoupon } = useCheckout();
   const navigate = useNavigate();
+
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<ManagedCoupon | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  const discountAmount = appliedCoupon ? calculateCouponDiscount(totalPrice, appliedCoupon) : 0;
+
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponError("");
+    setCouponLoading(true);
+    const { data, error } = await supabase.rpc("validate_coupon_code", {
+      p_code: code, p_user_id: user?.id ?? null, p_subtotal: totalPrice,
+    });
+    setCouponLoading(false);
+    const coupon = Array.isArray(data) ? data[0] : data;
+    if (error || !coupon) { setCouponError(error?.message || "Invalid or expired coupon."); return; }
+    setAppliedCoupon({
+      code: coupon.code,
+      discount_type: coupon.discount_type as ManagedCoupon["discount_type"],
+      discount_value: Number(coupon.discount_value),
+      min_order_value: Number(coupon.min_order_value),
+      max_discount_amount: coupon.max_discount_amount === null ? null : Number(coupon.max_discount_amount),
+    });
+  };
+
+  const removeCoupon = () => { setAppliedCoupon(null); setCouponInput(""); setCouponError(""); };
 
   // Lock body scroll when open (including mobile Safari)
   useEffect(() => {
@@ -164,13 +197,59 @@ const CartDrawer = () => {
             {/* Footer */}
             {items.length > 0 && (
               <div className="border-t border-border px-5 py-4 space-y-3">
+                {/* Coupon */}
+                {!user ? (
+                  <p className="font-body text-xs text-muted-foreground">Sign in to apply a coupon code</p>
+                ) : (
+                  <div>
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <Tag size={12} className="text-primary" />
+                          <span className="font-body text-xs font-semibold text-primary">{appliedCoupon.code}</span>
+                          <span className="font-body text-[11px] text-muted-foreground">
+                            {appliedCoupon.discount_type === "percentage"
+                              ? `${appliedCoupon.discount_value}% off`
+                              : `₹${appliedCoupon.discount_value} off`}
+                          </span>
+                        </div>
+                        <button onClick={removeCoupon} className="text-muted-foreground hover:text-destructive">
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                          onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                          placeholder="Coupon code"
+                          className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 font-body text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          disabled={couponLoading || !couponInput.trim()}
+                          className="shrink-0 rounded-lg bg-secondary px-3 py-2 font-body text-xs font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
+                        >
+                          {couponLoading ? <Loader2 size={12} className="animate-spin" /> : "Apply"}
+                        </button>
+                      </div>
+                    )}
+                    {couponError && <p className="mt-1 font-body text-[11px] text-destructive">{couponError}</p>}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="font-body text-sm text-muted-foreground">Subtotal</span>
                   <span className="font-display text-lg font-bold text-foreground">₹{totalPrice.toLocaleString("en-IN")}</span>
                 </div>
-                <p className="font-body text-xs text-muted-foreground">
-                  Shipping & coupons calculated at checkout.
-                </p>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-body text-xs text-muted-foreground">Discount</span>
+                    <span className="font-body text-sm font-medium text-primary">−₹{discountAmount}</span>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   <button
                     onClick={() => { closeDrawer(); navigate("/cart"); }}
@@ -185,6 +264,7 @@ const CartDrawer = () => {
                         window.dispatchEvent(new Event(OPEN_AUTH_EVENT));
                         return;
                       }
+                      if (appliedCoupon) setCoupon(appliedCoupon, discountAmount);
                       navigate("/checkout/address");
                     }}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
