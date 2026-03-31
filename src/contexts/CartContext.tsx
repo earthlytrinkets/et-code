@@ -16,6 +16,9 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -87,12 +90,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = useCallback(() => setItems([]), []);
 
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openDrawer = useCallback(() => setDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   const value = useMemo(
-    () => ({ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice }),
-    [items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice]
+    () => ({ items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, drawerOpen, openDrawer, closeDrawer }),
+    [items, addToCart, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice, drawerOpen, openDrawer, closeDrawer]
   );
 
   return (

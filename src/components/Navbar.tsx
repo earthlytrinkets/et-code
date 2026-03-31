@@ -14,7 +14,7 @@ import { OPEN_AUTH_EVENT, POST_AUTH_REDIRECT_KEY } from "@/lib/auth-intent";
 
 
 const Navbar = () => {
-  const { totalItems } = useCart();
+  const { totalItems, openDrawer } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -138,8 +138,8 @@ const Navbar = () => {
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
             {!(roleChecked && isAdmin) && (
-              <Link
-                to="/cart"
+              <button
+                onClick={openDrawer}
                 className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 <ShoppingBag size={18} />
@@ -148,7 +148,7 @@ const Navbar = () => {
                     {totalItems}
                   </span>
                 )}
-              </Link>
+              </button>
             )}
 
             {user ? (

@@ -7,7 +7,7 @@ import GracefulImage from "@/components/GracefulImage";
 import type { Product } from "@/types/product";
 
 const ProductCard = ({ product }: { product: Product }) => {
-  const { items, addToCart, updateQuantity } = useCart();
+  const { items, addToCart, updateQuantity, openDrawer } = useCart();
   const { isAdmin, roleChecked } = useIsAdmin();
 
   const cartItem = items.find((i) => i.product.id === product.id);
@@ -60,6 +60,7 @@ const ProductCard = ({ product }: { product: Product }) => {
                   onClick={(e) => {
                     e.preventDefault();
                     addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                    openDrawer();
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm shadow-soft text-foreground transition-colors hover:bg-primary hover:text-primary-foreground active:scale-95"
                 >

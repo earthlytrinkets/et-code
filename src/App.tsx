@@ -25,6 +25,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import BackToTop from "@/components/BackToTop";
+import CartDrawer from "@/components/CartDrawer";
 import SplashScreen from "@/components/SplashScreen";
 import Unsubscribed from "./pages/Unsubscribed";
 import AdminProducts from "./pages/admin/Products";
@@ -67,6 +68,7 @@ const App = () => {
                   <BrowserRouter>
                     <ScrollToTop />
                     <BackToTop />
+                    <CartDrawer />
                     <Routes>
                       {/* Public */}
                       <Route path="/" element={<Index />} />

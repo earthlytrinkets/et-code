@@ -16,7 +16,7 @@ const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
-  const { items, addToCart, updateQuantity } = useCart();
+  const { items, addToCart, updateQuantity, openDrawer } = useCart();
   const { user } = useAuth();
   const { isAdmin, roleChecked } = useIsAdmin();
 
@@ -221,6 +221,7 @@ const ProductDetail = () => {
                   <button
                     onClick={() => {
                       addToCart({ id: product.id, name: product.name, slug: product.slug, price: product.price, images: product.images, stock: product.stock });
+                      openDrawer();
                     }}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-8 py-4 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow md:w-auto"
                   >
