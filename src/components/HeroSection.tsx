@@ -10,7 +10,7 @@ const HeroSection = () => {
   return (
   <section className="relative overflow-hidden">
     <div className="container mx-auto px-4 lg:px-8">
-      <div className="grid min-h-[85vh] items-center gap-8 lg:grid-cols-2">
+      <div className="grid items-center gap-8 py-10 md:py-14 lg:grid-cols-2 lg:py-16 xl:min-h-[85vh] xl:py-0">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -55,7 +55,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="order-1 lg:order-2"
         >
-          <div className="relative">
+          <div className="relative mx-auto max-w-sm md:max-w-md lg:max-w-none">
             <GracefulImage
               src={heroImage}
               alt="Handcrafted epoxy resin jewellery"
@@ -79,12 +79,12 @@ const HeroSection = () => {
       <motion.button
         onClick={() => document.getElementById("featured")?.scrollIntoView({ behavior: "smooth" })}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, y: [0, 8, 0] }}
+        animate={{ opacity: 1, y: [0, 6, 0] }}
         transition={{ opacity: { delay: 1 }, y: { repeat: Infinity, duration: 2 } }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-primary transition-colors"
+        className="hidden xl:block absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground/40 hover:text-primary transition-colors"
         aria-label="Scroll to featured products"
       >
-        <ChevronDown size={28} />
+        <ChevronDown size={24} />
       </motion.button>
     </div>
   </section>

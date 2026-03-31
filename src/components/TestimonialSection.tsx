@@ -128,7 +128,9 @@ const TestimonialSection = () => {
         ref={scrollRef}
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
-        className="flex gap-6 overflow-x-hidden px-4 lg:px-8"
+        onTouchStart={() => setPaused(true)}
+        onTouchEnd={() => setPaused(false)}
+        className="flex gap-6 overflow-x-scroll px-4 lg:px-8 [&::-webkit-scrollbar]:hidden"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {displayReviews.map((review, i) => (

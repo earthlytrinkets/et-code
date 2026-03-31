@@ -13,14 +13,27 @@ const CartDrawer = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Lock body scroll when open
+  // Lock body scroll when open (including mobile Safari)
   useEffect(() => {
-    if (drawerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => { document.body.style.overflow = ""; };
+    if (!drawerOpen) return;
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    const body = document.body;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    return () => {
+      html.style.overflow = "";
+      body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      window.scrollTo(0, scrollY);
+    };
   }, [drawerOpen]);
 
   // Close on Escape
