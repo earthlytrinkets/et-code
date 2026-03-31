@@ -278,39 +278,6 @@ function orderShippedEmail(order: Order) {
   );
 }
 
-function orderOutForDeliveryEmail(order: Order) {
-  const addr = order.shipping_address as Addr;
-  const awb  = order.shiprocket_awb as string | null;
-
-  return wrap(
-    cardHeader("&#128666;", "Arriving Today!", "Your order is out for delivery"),
-    `${orderLabel(order.id as string)}
-
-    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
-      Your order is out for delivery and will arrive today!
-      Please ensure someone is available at the delivery address to receive your package.
-    </p>
-
-    ${awb ? `
-    <div style="background:${C.bg};border-radius:10px;padding:14px 18px;margin-bottom:20px">
-      <p style="margin:0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">
-        Tracking: <strong style="color:${C.text}">${awb}</strong>
-      </p>
-    </div>` : ""}
-
-    <!-- Reminder box -->
-    <div style="background:#fff8f5;border:1px solid #f0d5c8;border-radius:10px;padding:14px 18px;margin-bottom:24px">
-      <p style="margin:0;font-size:13px;color:#8a4a35;font-family:Arial,sans-serif;line-height:1.6">
-        &#128161; <strong>Quick reminder:</strong> For COD orders, please keep the exact amount ready.
-        If you're unavailable, contact the courier to reschedule delivery.
-      </p>
-    </div>
-
-    ${addressBlock(addr)}
-    ${ctaButton("View Order &rarr;", `${SITE_URL}/profile`)}`
-  );
-}
-
 function orderDeliveredEmail(order: Order) {
   const items  = order.order_items as Item[];
   const oid    = orderId8(order.id as string);
@@ -393,42 +360,6 @@ function orderCancelledEmail(order: Order) {
     </div>
 
     ${ctaButton("Browse Collection &rarr;", `${SITE_URL}/shop`)}`
-  );
-}
-
-function orderRefundedEmail(order: Order) {
-  return wrap(
-    cardHeader("&#128176;", "Refund Processed", "Your money is on its way back"),
-    `${orderLabel(order.id as string)}
-
-    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
-      We've processed a refund for your order. The amount of
-      <strong>&#8377;${order.total}</strong> will be credited back to your original payment method.
-    </p>
-
-    <div style="background:${C.bg};border-radius:10px;padding:18px 20px;margin-bottom:24px">
-      <table width="100%" cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Refund Amount</td>
-          <td style="padding:6px 0;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif;text-align:right">&#8377;${order.total}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Payment Method</td>
-          <td style="padding:6px 0;font-size:13px;color:${C.text};font-family:Arial,sans-serif;text-align:right">${order.payment_method === "cod" ? "Cash on Delivery" : "Razorpay (Online)"}</td>
-        </tr>
-        <tr>
-          <td style="padding:6px 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">Timeline</td>
-          <td style="padding:6px 0;font-size:13px;color:${C.text};font-family:Arial,sans-serif;text-align:right">5&ndash;7 business days</td>
-        </tr>
-      </table>
-    </div>
-
-    <p style="margin:0 0 24px;font-size:14px;color:${C.muted};line-height:1.7;font-family:Arial,sans-serif">
-      If you don't see the refund within 7 business days, please contact us at
-      <a href="mailto:${ADMIN_EMAIL}" style="color:${C.green};text-decoration:none">${ADMIN_EMAIL}</a>.
-    </p>
-
-    ${ctaButton("Shop Again &rarr;", `${SITE_URL}/shop`)}`
   );
 }
 
@@ -712,10 +643,6 @@ const EVENTS: Record<string, EventConfig> = {
     subject: (id) => `\u{1F4E6} Your Order is On Its Way! \u2013 ${id} | Earthly Trinkets`,
     template: orderShippedEmail,
   },
-  order_out_for_delivery: {
-    subject: (id) => `\u{1F69A} Arriving Today! \u2013 ${id} | Earthly Trinkets`,
-    template: orderOutForDeliveryEmail,
-  },
   order_delivered: {
     subject: (id) => `\u{1F338} Delivered! How did we do? \u2013 ${id} | Earthly Trinkets`,
     template: orderDeliveredEmail,
@@ -723,10 +650,6 @@ const EVENTS: Record<string, EventConfig> = {
   order_cancelled: {
     subject: (id) => `Order Cancelled \u2013 ${id} | Earthly Trinkets`,
     template: orderCancelledEmail,
-  },
-  order_refunded: {
-    subject: (id) => `\u{1F4B0} Refund Processed \u2013 ${id} | Earthly Trinkets`,
-    template: orderRefundedEmail,
   },
 };
 

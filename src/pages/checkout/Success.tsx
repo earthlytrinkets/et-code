@@ -8,16 +8,14 @@ import { CheckCircle, Package, MapPin, CreditCard, Truck, ArrowRight, ShoppingBa
 import { motion } from "framer-motion";
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
   confirmed: "Order Confirmed",
   processing: "Processing",
   shipped: "Shipped",
-  out_for_delivery: "Out for Delivery",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
 
-const STATUS_STEPS = ["confirmed", "processing", "shipped", "out_for_delivery", "delivered"];
+const STATUS_STEPS = ["confirmed", "processing", "shipped", "delivered"];
 
 // ─── Shared Stepper ───────────────────────────────────────────────────────────
 const CheckoutStepper = ({ current }: { current: 0 | 1 | 2 }) => {

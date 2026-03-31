@@ -8,14 +8,11 @@ import { ChevronDown, ChevronRight, Package, Truck, Send, RefreshCw } from "luci
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type OrderStatus =
-  | "pending"
   | "confirmed"
   | "processing"
   | "shipped"
-  | "out_for_delivery"
   | "delivered"
-  | "cancelled"
-  | "refunded";
+  | "cancelled";
 
 type OrderItem = {
   id: string;
@@ -58,20 +55,17 @@ type Order = {
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_META: Record<OrderStatus, { label: string; color: string }> = {
-  pending:          { label: "Pending",          color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
-  confirmed:        { label: "Confirmed",        color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
-  processing:       { label: "Processing",       color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" },
-  shipped:          { label: "Shipped",          color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" },
-  out_for_delivery: { label: "Out for Delivery", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
-  delivered:        { label: "Delivered",        color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
-  cancelled:        { label: "Cancelled",        color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
-  refunded:         { label: "Refunded",         color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+  confirmed:  { label: "Confirmed",  color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
+  processing: { label: "Processing", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" },
+  shipped:    { label: "Shipped",    color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" },
+  delivered:  { label: "Delivered",  color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
+  cancelled:  { label: "Cancelled",  color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
 };
 
 // ─── Status patch logic ───────────────────────────────────────────────────────
 
 // Statuses where it makes no sense to have a tracking/shipping record
-const PRE_SHIPPING: OrderStatus[] = ["pending", "confirmed", "processing"];
+const PRE_SHIPPING: OrderStatus[] = ["confirmed", "processing"];
 
 /**
  * Builds the DB patch for a status change.
@@ -93,12 +87,10 @@ function buildStatusPatch(newStatus: OrderStatus): Partial<Order> {
 // ─── Email helper ─────────────────────────────────────────────────────────────
 
 const STATUS_EMAIL_EVENT: Partial<Record<OrderStatus, string>> = {
-  confirmed:        "order_confirmed",
-  shipped:          "order_shipped",
-  out_for_delivery: "order_out_for_delivery",
-  delivered:        "order_delivered",
-  cancelled:        "order_cancelled",
-  refunded:         "order_refunded",
+  confirmed: "order_confirmed",
+  shipped:   "order_shipped",
+  delivered: "order_delivered",
+  cancelled: "order_cancelled",
 };
 
 const sendStatusEmail = (orderId: string, status: OrderStatus) => {
@@ -139,7 +131,7 @@ const OrderRow = ({ order }: { order: Order }) => {
 
       // Restore stock when order is cancelled or refunded
       const newStatus = (patch as Partial<Order>).status;
-      const restoreStatuses: OrderStatus[] = ["cancelled", "refunded"];
+      const restoreStatuses: OrderStatus[] = ["cancelled"];
       if (newStatus && restoreStatuses.includes(newStatus) && !restoreStatuses.includes(order.status)) {
         if (order.coupon_code) {
           const { error: couponError } = await supabase.rpc("adjust_coupon_usage", {
@@ -248,7 +240,7 @@ const OrderRow = ({ order }: { order: Order }) => {
   const date = new Date(order.created_at).toLocaleDateString("en-IN", {
     day: "numeric", month: "short", year: "numeric",
   });
-  const showShipping = ["confirmed", "processing", "shipped", "out_for_delivery"].includes(order.status);
+  const showShipping = ["confirmed", "processing", "shipped"].includes(order.status);
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -509,7 +501,7 @@ const OrderRow = ({ order }: { order: Order }) => {
           {/* Status transitions */}
           <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
             <span className="font-body text-sm text-muted-foreground">Move to:</span>
-            {(["confirmed", "processing", "out_for_delivery", "delivered", "cancelled", "refunded"] as OrderStatus[])
+            {(["confirmed", "processing", "shipped", "delivered", "cancelled"] as OrderStatus[])
               .filter((s) => s !== order.status)
               .map((s) => (
                 <button
@@ -548,7 +540,7 @@ export const AdminOrdersSection = () => {
   });
 
   const allStatuses: (OrderStatus | "all")[] = [
-    "all", "pending", "confirmed", "processing", "shipped", "out_for_delivery", "delivered", "cancelled", "refunded",
+    "all", "confirmed", "processing", "shipped", "delivered", "cancelled",
   ];
 
   return (

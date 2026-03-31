@@ -163,14 +163,11 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status' AND typnamespace = 'public'::regnamespace) THEN
     CREATE TYPE public.order_status AS ENUM (
-      'pending',
       'confirmed',
       'processing',
       'shipped',
-      'out_for_delivery',
       'delivered',
-      'cancelled',
-      'refunded'
+      'cancelled'
     );
   END IF;
 END $$;
@@ -178,7 +175,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS public.orders (
   id                  UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id             UUID          REFERENCES public.profiles(id) ON DELETE SET NULL,
-  status              order_status  NOT NULL DEFAULT 'pending',
+  status              order_status  NOT NULL DEFAULT 'confirmed',
   subtotal            NUMERIC(10,2) NOT NULL,
   discount_amount     NUMERIC(10,2) NOT NULL DEFAULT 0,
   coupon_code         TEXT,
@@ -354,7 +351,7 @@ AS $$
   JOIN public.order_items oi ON oi.order_id = o.id
   WHERE oi.product_id = p_product_id
     AND o.user_id IS NOT NULL
-    AND o.status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered');
+    AND o.status IN ('confirmed', 'processing', 'shipped', 'delivered');
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_verified_buyers(UUID) TO authenticated;
@@ -487,7 +484,7 @@ BEGIN
     INTO v_order_count
     FROM public.orders
     WHERE user_id = p_user_id
-      AND status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered');
+      AND status IN ('confirmed', 'processing', 'shipped', 'delivered');
 
     IF v_order_count > 0 THEN
       RAISE EXCEPTION 'This coupon is only available on your first order.';
@@ -504,7 +501,7 @@ BEGIN
     FROM public.orders
     WHERE user_id = p_user_id
       AND coupon_code = v_coupon.code
-      AND status IN ('confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered');
+      AND status IN ('confirmed', 'processing', 'shipped', 'delivered');
 
     IF v_coupon_uses_by_user >= v_coupon.max_uses_per_user THEN
       RAISE EXCEPTION 'You have already used this coupon the maximum number of times.';
@@ -627,3 +624,31 @@ CREATE POLICY "Admins can delete subscribers"
         AND user_roles.role = 'admin'::app_role
     )
   );
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data ->> 'full_name', NEW.raw_user_meta_data ->> 'name', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'avatar_url', '')
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (NEW.id, 'user')
+  ON CONFLICT (user_id, role) DO NOTHING;
+
+  IF NEW.email IS NOT NULL AND length(trim(NEW.email)) > 0 THEN
+    INSERT INTO public.subscribers (email, status)
+    VALUES (lower(trim(NEW.email)), 'active')
+    ON CONFLICT (email) DO UPDATE
+      SET status = 'active';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;

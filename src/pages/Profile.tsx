@@ -699,47 +699,33 @@ const ShiprocketTracker = ({ awb, shippingMethod }: { awb: string; shippingMetho
 // ─── Orders Section ───────────────────────────────────────────────────────────
 
 const ORDER_STATUS_STYLE: Record<string, string> = {
-  pending:          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  confirmed:        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  processing:       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  shipped:          "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  out_for_delivery: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  delivered:        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  cancelled:        "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  refunded:         "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+  confirmed:  "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  processing: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+  shipped:    "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+  delivered:  "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  cancelled:  "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: "Pending", confirmed: "Confirmed", processing: "Processing",
-  shipped: "Shipped", out_for_delivery: "Out for Delivery",
-  delivered: "Delivered", cancelled: "Cancelled", refunded: "Refunded",
+  confirmed: "Confirmed", processing: "Processing",
+  shipped: "Shipped", delivered: "Delivered", cancelled: "Cancelled",
 };
 
 // ─── Delivery Progress Bar ────────────────────────────────────────────────────
 
 const DELIVERY_STEPS = [
-  { key: "pending",          label: "Ordered"    },
-  { key: "confirmed",        label: "Confirmed"  },
-  { key: "processing",       label: "Processing" },
-  { key: "shipped",          label: "Shipped"    },
-  { key: "out_for_delivery", label: "On the Way" },
-  { key: "delivered",        label: "Delivered"  },
+  { key: "confirmed",  label: "Confirmed"  },
+  { key: "processing", label: "Processing" },
+  { key: "shipped",    label: "Shipped"    },
+  { key: "delivered",  label: "Delivered"  },
 ];
 
 const DeliveryProgress = ({ status }: { status: string }) => {
-  if (status === "cancelled" || status === "refunded") {
+  if (status === "cancelled") {
     return (
-      <div className={`rounded-xl px-4 py-3 text-center ${
-        status === "cancelled"
-          ? "bg-red-50 dark:bg-red-900/20"
-          : "bg-gray-100 dark:bg-gray-800/40"
-      }`}>
-        <p className={`font-body text-sm font-semibold ${
-          status === "cancelled"
-            ? "text-red-700 dark:text-red-400"
-            : "text-gray-600 dark:text-gray-400"
-        }`}>
-          {status === "cancelled" ? "Order Cancelled" : "Order Refunded"}
+      <div className="rounded-xl px-4 py-3 text-center bg-red-50 dark:bg-red-900/20">
+        <p className="font-body text-sm font-semibold text-red-700 dark:text-red-400">
+          Order Cancelled
         </p>
       </div>
     );

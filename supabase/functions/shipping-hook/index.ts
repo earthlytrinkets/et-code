@@ -37,9 +37,9 @@ const SR_STATUS_MAP: Record<string, string> = {
   "38": "shipped",        // Shipped — Reached at Destination Hub
   "48": "shipped",        // Shipped — In Transit — Shipment Out for Delivery
 
-  // Out for Delivery
-  "17": "out_for_delivery", // Shipped — Out for Delivery
-  "19": "out_for_delivery", // Shipped — Out for Delivery (alternate)
+  // Out for Delivery → map to shipped (we don't have a separate status)
+  "17": "shipped",          // Shipped — Out for Delivery
+  "19": "shipped",          // Shipped — Out for Delivery (alternate)
 
   // Delivered
   "8":  "delivered",      // Shipped — Delivered
@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     }
 
     // Don't move backwards (e.g. don't go from delivered back to shipped)
-    const STATUS_ORDER = ["pending", "confirmed", "processing", "shipped", "out_for_delivery", "delivered"];
+    const STATUS_ORDER = ["confirmed", "processing", "shipped", "delivered"];
     const currentIdx = STATUS_ORDER.indexOf(order.status);
     const newIdx = STATUS_ORDER.indexOf(newStatus);
     if (newIdx >= 0 && currentIdx >= 0 && newIdx <= currentIdx && newStatus !== "cancelled") {
@@ -166,7 +166,6 @@ Deno.serve(async (req) => {
     // Trigger email notification
     const STATUS_EMAIL_EVENT: Record<string, string> = {
       shipped: "order_shipped",
-      out_for_delivery: "order_out_for_delivery",
       delivered: "order_delivered",
       cancelled: "order_cancelled",
     };
