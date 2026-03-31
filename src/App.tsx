@@ -31,6 +31,7 @@ import Unsubscribed from "./pages/Unsubscribed";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminCoupons from "./pages/admin/Coupons";
+import AdminCustomOrders from "./pages/admin/CustomOrders";
 import CheckoutAddress from "./pages/checkout/Address";
 import CheckoutPayment from "./pages/checkout/Payment";
 import CheckoutSuccess from "./pages/checkout/Success";
@@ -95,6 +96,7 @@ const App = () => {
                       <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
                       <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
                       <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+                      <Route path="/admin/custom-orders" element={<AdminRoute><AdminCustomOrders /></AdminRoute>} />
 
                       <Route path="*" element={<NotFound />} />
                     </Routes>

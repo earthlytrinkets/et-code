@@ -406,13 +406,13 @@ CREATE TABLE IF NOT EXISTS public.custom_orders (
 
 ALTER TABLE public.custom_orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Authenticated users can submit custom orders"
-  ON public.custom_orders FOR INSERT TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Anyone can submit custom orders"
+  ON public.custom_orders FOR INSERT
+  WITH CHECK (true);
 
-CREATE POLICY "Users can read own custom orders"
-  ON public.custom_orders FOR SELECT TO authenticated
-  USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can read custom orders"
+  ON public.custom_orders FOR SELECT
+  USING (public.has_role(auth.uid(), 'admin'::app_role));
 
 CREATE POLICY "Admins can update custom orders"
   ON public.custom_orders FOR UPDATE

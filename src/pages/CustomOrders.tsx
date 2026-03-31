@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
 import { motion } from "framer-motion";
 import { Upload, Send, X, ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,56 +11,25 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const budgetRanges = ["₹500 - ₹1,000", "₹1,000 - ₹2,500", "₹2,500 - ₹5,000", "₹5,000+"];
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const DRAFT_KEY = "et_custom_order_draft";
 
 interface PreviewFile {
   file: File;
   preview: string;
 }
 
-interface Draft {
-  name: string;
-  email: string;
-  description: string;
-  budget: string;
-}
-
-const saveDraft = (d: Draft) => sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
-const loadDraft = (): Draft | null => {
-  const raw = sessionStorage.getItem(DRAFT_KEY);
-  if (!raw) return null;
-  sessionStorage.removeItem(DRAFT_KEY);
-  try { return JSON.parse(raw); } catch { return null; }
-};
-
 const CustomOrders = () => {
   const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const draft = useRef(loadDraft());
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(draft.current?.name ?? "");
-  const [email, setEmail] = useState(draft.current?.email ?? "");
-  const [description, setDescription] = useState(draft.current?.description ?? "");
-  const [budget, setBudget] = useState(draft.current?.budget ?? "");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState("");
   const [files, setFiles] = useState<PreviewFile[]>([]);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
-  // Redirect admins
-  useEffect(() => {
-    if (authLoading || !user) return;
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle()
-      .then(({ data }) => { if (data) navigate("/admin/orders", { replace: true }); });
-  }, [user, authLoading, navigate]);
-
-  // Pre-fill name & email from profile only when fields are empty
+  // Pre-fill name & email from profile when user is logged in
   useEffect(() => {
     if (!user) return;
     setEmail((prev) => prev || user.email || "");
@@ -82,6 +49,10 @@ const CustomOrders = () => {
   }, [files]);
 
   const addFiles = (incoming: FileList | File[]) => {
+    if (!user) {
+      toast.error("Please sign in to upload reference images");
+      return;
+    }
     const accepted: PreviewFile[] = [];
     for (const file of Array.from(incoming)) {
       if (files.length + accepted.length >= MAX_FILES) {
@@ -128,11 +99,6 @@ const CustomOrders = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      saveDraft({ name, email, description, budget });
-      setAuthModalOpen(true);
-      return;
-    }
     setLoading(true);
     try {
       const imageUrls = await uploadImages();
@@ -143,7 +109,7 @@ const CustomOrders = () => {
           email,
           description,
           budget_range: budget || null,
-          user_id: user.id,
+          user_id: user?.id ?? null,
           reference_images: imageUrls,
         });
       if (error) throw error;
@@ -173,7 +139,6 @@ const CustomOrders = () => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       {!authLoading && <main className="container mx-auto px-4 py-12 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">Made just for you</p>
@@ -249,7 +214,7 @@ const CustomOrders = () => {
 
               <div>
                 <label className="font-body text-sm font-medium text-foreground">
-                  Reference Images <span className="text-muted-foreground font-normal">(optional, up to {MAX_FILES})</span>
+                  Reference Images <span className="text-muted-foreground font-normal">(optional{!user ? ", sign in to upload" : `, up to ${MAX_FILES}`})</span>
                 </label>
                 <input
                   ref={fileInputRef}
@@ -262,19 +227,21 @@ const CustomOrders = () => {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
+                  onClick={() => user ? fileInputRef.current?.click() : toast.error("Please sign in to upload reference images")}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { user ? fileInputRef.current?.click() : toast.error("Please sign in to upload reference images"); } }}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                   className={`mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed bg-card p-8 text-center transition-colors cursor-pointer ${
-                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    !user ? "opacity-60 cursor-not-allowed" : dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                   }`}
                 >
                   <div>
                     <Upload size={24} className="mx-auto text-muted-foreground" />
-                    <p className="mt-2 font-body text-xs text-muted-foreground">Click or drag to upload</p>
-                    <p className="mt-1 font-body text-[10px] text-muted-foreground/60">JPG, PNG, WebP — max 10 MB each</p>
+                    <p className="mt-2 font-body text-xs text-muted-foreground">
+                      {user ? "Click or drag to upload" : "Sign in to upload reference images"}
+                    </p>
+                    {user && <p className="mt-1 font-body text-[10px] text-muted-foreground/60">JPG, PNG, WebP — max 10 MB each</p>}
                   </div>
                 </div>
 
