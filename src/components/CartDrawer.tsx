@@ -14,15 +14,12 @@ import { calculateCouponDiscount, type ManagedCoupon } from "@/lib/coupons";
 const CartDrawer = () => {
   const { items, updateQuantity, removeFromCart, totalItems, totalPrice, drawerOpen, closeDrawer } = useCart();
   const { user } = useAuth();
-  const { setCoupon } = useCheckout();
+  const { appliedCoupon, discountAmount, setCoupon } = useCheckout();
   const navigate = useNavigate();
 
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<ManagedCoupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
-
-  const discountAmount = appliedCoupon ? calculateCouponDiscount(totalPrice, appliedCoupon) : 0;
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim().toUpperCase();
@@ -35,16 +32,17 @@ const CartDrawer = () => {
     setCouponLoading(false);
     const coupon = Array.isArray(data) ? data[0] : data;
     if (error || !coupon) { setCouponError(error?.message || "Invalid or expired coupon."); return; }
-    setAppliedCoupon({
+    const managed: ManagedCoupon = {
       code: coupon.code,
       discount_type: coupon.discount_type as ManagedCoupon["discount_type"],
       discount_value: Number(coupon.discount_value),
       min_order_value: Number(coupon.min_order_value),
       max_discount_amount: coupon.max_discount_amount === null ? null : Number(coupon.max_discount_amount),
-    });
+    };
+    setCoupon(managed, calculateCouponDiscount(totalPrice, managed));
   };
 
-  const removeCoupon = () => { setAppliedCoupon(null); setCouponInput(""); setCouponError(""); };
+  const removeCoupon = () => { setCoupon(null, 0); setCouponInput(""); setCouponError(""); };
 
   // Lock body scroll when open (including mobile Safari)
   useEffect(() => {
@@ -264,7 +262,6 @@ const CartDrawer = () => {
                         window.dispatchEvent(new Event(OPEN_AUTH_EVENT));
                         return;
                       }
-                      if (appliedCoupon) setCoupon(appliedCoupon, discountAmount);
                       navigate("/checkout/address");
                     }}
                     className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"

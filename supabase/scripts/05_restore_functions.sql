@@ -92,7 +92,117 @@ END;
 $$;
 
 
--- 4. Ensure subscribers table has correct CHECK constraint and RLS policies
+-- 4. Restore validate_coupon_code (codex agent added 'out_for_delivery' which doesn't exist in enum)
+DROP FUNCTION IF EXISTS public.validate_coupon_code(TEXT, UUID, NUMERIC);
+
+CREATE OR REPLACE FUNCTION public.validate_coupon_code(
+  p_code TEXT,
+  p_user_id UUID,
+  p_subtotal NUMERIC
+)
+RETURNS TABLE (
+  code TEXT,
+  discount_type TEXT,
+  discount_value NUMERIC,
+  min_order_value NUMERIC,
+  max_discount_amount NUMERIC,
+  discount_amount NUMERIC
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_coupon public.coupons%ROWTYPE;
+  v_order_count INTEGER;
+  v_coupon_uses_by_user INTEGER;
+BEGIN
+  SELECT *
+  INTO v_coupon
+  FROM public.coupons c
+  WHERE upper(c.code) = upper(trim(p_code));
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Invalid coupon code.';
+  END IF;
+
+  IF NOT v_coupon.is_active THEN
+    RAISE EXCEPTION 'This coupon is inactive.';
+  END IF;
+
+  IF v_coupon.starts_at IS NOT NULL AND now() < v_coupon.starts_at THEN
+    RAISE EXCEPTION 'This coupon is not active yet.';
+  END IF;
+
+  IF v_coupon.expires_at IS NOT NULL AND now() >= v_coupon.expires_at THEN
+    RAISE EXCEPTION 'This coupon has expired.';
+  END IF;
+
+  IF p_subtotal < v_coupon.min_order_value THEN
+    RAISE EXCEPTION 'Minimum order of ₹% required.', trim(to_char(v_coupon.min_order_value, 'FM999999999.00'));
+  END IF;
+
+  IF v_coupon.max_uses IS NOT NULL AND v_coupon.uses_count >= v_coupon.max_uses THEN
+    RAISE EXCEPTION 'This coupon has reached its usage limit.';
+  END IF;
+
+  IF v_coupon.first_order_only THEN
+    IF p_user_id IS NULL THEN
+      RAISE EXCEPTION 'Please sign in to use this coupon.';
+    END IF;
+
+    SELECT count(*)
+    INTO v_order_count
+    FROM public.orders
+    WHERE user_id = p_user_id
+      AND status IN ('confirmed', 'processing', 'shipped', 'delivered');
+
+    IF v_order_count > 0 THEN
+      RAISE EXCEPTION 'This coupon is only available on your first order.';
+    END IF;
+  END IF;
+
+  IF v_coupon.max_uses_per_user IS NOT NULL THEN
+    IF p_user_id IS NULL THEN
+      RAISE EXCEPTION 'Please sign in to use this coupon.';
+    END IF;
+
+    SELECT count(*)
+    INTO v_coupon_uses_by_user
+    FROM public.orders
+    WHERE user_id = p_user_id
+      AND coupon_code = v_coupon.code
+      AND status IN ('confirmed', 'processing', 'shipped', 'delivered');
+
+    IF v_coupon_uses_by_user >= v_coupon.max_uses_per_user THEN
+      RAISE EXCEPTION 'You have already used this coupon the maximum number of times.';
+    END IF;
+  END IF;
+
+  code := v_coupon.code;
+  discount_type := v_coupon.discount_type;
+  discount_value := v_coupon.discount_value;
+  min_order_value := v_coupon.min_order_value;
+  max_discount_amount := v_coupon.max_discount_amount;
+  discount_amount := CASE
+    WHEN v_coupon.discount_type = 'percentage' THEN
+      LEAST(
+        ROUND((p_subtotal * v_coupon.discount_value / 100.0)::numeric, 2),
+        COALESCE(v_coupon.max_discount_amount, ROUND((p_subtotal * v_coupon.discount_value / 100.0)::numeric, 2))
+      )
+    ELSE
+      LEAST(v_coupon.discount_value, p_subtotal)
+  END;
+
+  RETURN NEXT;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.validate_coupon_code(TEXT, UUID, NUMERIC) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.validate_coupon_code(TEXT, UUID, NUMERIC) TO authenticated;
+
+
+-- 5. Ensure subscribers table has correct CHECK constraint and RLS policies
 -- (Re-create policies idempotently)
 ALTER TABLE public.subscribers ENABLE ROW LEVEL SECURITY;
 

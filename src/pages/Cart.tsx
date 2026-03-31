@@ -18,7 +18,7 @@ type Coupon = ManagedCoupon;
 const Cart = () => {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const { user } = useAuth();
-  const { setCoupon } = useCheckout();
+  const { appliedCoupon, discountAmount, setCoupon } = useCheckout();
   const { isAdmin, roleChecked } = useIsAdmin();
   const navigate = useNavigate();
 
@@ -26,15 +26,11 @@ const Cart = () => {
     if (roleChecked && isAdmin) navigate("/shop", { replace: true });
   }, [isAdmin, roleChecked, navigate]);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponInput, setCouponInput] = useState(appliedCoupon?.code ?? "");
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const couponMeetsMinimum = !appliedCoupon || totalPrice >= appliedCoupon.min_order_value;
 
-  const discountAmount = appliedCoupon
-    ? calculateCouponDiscount(totalPrice, appliedCoupon)
-    : 0;
   const finalTotal = totalPrice - discountAmount;
 
   const handleApplyCoupon = async () => {
@@ -57,17 +53,18 @@ const Cart = () => {
       return;
     }
 
-    setAppliedCoupon({
+    const managed: Coupon = {
       code: coupon.code,
       discount_type: coupon.discount_type as Coupon["discount_type"],
       discount_value: Number(coupon.discount_value),
       min_order_value: Number(coupon.min_order_value),
       max_discount_amount: coupon.max_discount_amount === null ? null : Number(coupon.max_discount_amount),
-    });
+    };
+    setCoupon(managed, calculateCouponDiscount(totalPrice, managed));
   };
 
   const removeCoupon = () => {
-    setAppliedCoupon(null);
+    setCoupon(null, 0);
     setCouponInput("");
     setCouponError("");
   };
@@ -230,7 +227,6 @@ const Cart = () => {
                   setCouponError(`Minimum order of ₹${appliedCoupon.min_order_value} required.`);
                   return;
                 }
-                setCoupon(appliedCoupon, discountAmount);
                 navigate("/checkout/address");
               }}
               className="w-full rounded-full bg-primary py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
