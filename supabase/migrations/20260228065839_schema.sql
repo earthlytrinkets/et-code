@@ -105,7 +105,8 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO authenticated;
+REVOKE ALL ON FUNCTION public.decrement_product_stock(uuid, integer) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.decrement_product_stock(uuid, integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.increment_product_stock(
   p_product_id uuid,
@@ -116,6 +117,10 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin'::app_role) THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
   UPDATE public.products
      SET stock = stock + p_quantity
    WHERE id = p_product_id;
@@ -536,7 +541,13 @@ SET search_path = public
 AS $$
 DECLARE
   v_updated INTEGER;
+  is_server BOOLEAN := current_setting('role', true) = 'service_role';
 BEGIN
+  -- Allow service_role (server-side order creation) or admin (cancel/refund from UI)
+  IF NOT is_server AND NOT public.has_role(auth.uid(), 'admin'::app_role) THEN
+    RAISE EXCEPTION 'admin only';
+  END IF;
+
   IF p_delta = 0 THEN
     RETURN true;
   END IF;

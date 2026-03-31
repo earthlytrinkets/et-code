@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import GracefulImage from "@/components/GracefulImage";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -61,13 +61,30 @@ const HeroSection = () => {
               alt="Handcrafted epoxy resin jewellery"
               className="w-full rounded-2xl object-cover shadow-elevated"
             />
-            <div className="absolute -bottom-4 -left-4 rounded-xl bg-card p-4 shadow-elevated">
-              <p className="font-display text-2xl font-bold text-primary">500+</p>
-              <p className="font-body text-xs text-muted-foreground">Happy Customers</p>
+            <div className="absolute -bottom-4 -left-4 rounded-xl bg-card/95 backdrop-blur-sm p-4 shadow-elevated">
+              <p className="font-display text-xl font-bold text-primary">Now Live ✨</p>
+              <button
+                onClick={() => document.getElementById("featured")?.scrollIntoView({ behavior: "smooth" })}
+                className="font-body text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+              >
+                Shop Our First Collection ↓
+              </button>
             </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Scroll down arrow */}
+      <motion.button
+        onClick={() => document.getElementById("featured")?.scrollIntoView({ behavior: "smooth" })}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, y: [0, 8, 0] }}
+        transition={{ opacity: { delay: 1 }, y: { repeat: Infinity, duration: 2 } }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-primary transition-colors"
+        aria-label="Scroll to featured products"
+      >
+        <ChevronDown size={28} />
+      </motion.button>
     </div>
   </section>
   );
