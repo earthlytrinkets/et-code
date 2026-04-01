@@ -32,6 +32,11 @@ const Navbar = () => {
   const mobileMenuRef = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const handleLogoClick = () => {
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent | TouchEvent) => {
@@ -105,7 +110,7 @@ const Navbar = () => {
     <>
       <header className="sticky top-0 z-50 glass">
         <div className="container mx-auto grid grid-cols-3 items-center px-4 py-4 lg:px-8">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3">
             <img src={logo} alt="Earthly Trinkets" className="h-10 w-10 rounded-full object-cover md:h-12 md:w-12" />
             <span className="font-display text-xl font-bold italic tracking-wide text-foreground md:text-2xl lg:text-[1.7rem]">
               <span className="text-primary">Earthly</span>{" "}
