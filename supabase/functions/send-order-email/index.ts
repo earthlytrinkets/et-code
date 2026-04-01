@@ -99,7 +99,7 @@ function wrap(headerRow: string, bodyContent: string) {
 
 // ─── Reusable components ──────────────────────────────────────────────────────
 
-type Item = { product_name: string; quantity: number; price: number; products?: { slug: string } | null };
+type Item = { product_name: string; quantity: number; price: number; product_image?: string | null; products?: { slug: string } | null };
 type Addr = Record<string, string>;
 
 function itemsRows(items: Item[]) {
@@ -280,50 +280,71 @@ function orderShippedEmail(order: Order) {
 
 function orderDeliveredEmail(order: Order) {
   const items  = order.order_items as Item[];
+  const disc   = (order.discount_amount as number) ?? 0;
 
-  const reviewBlocks = items
-    .filter((i) => i.products?.slug)
-    .map((i, idx, arr) => {
-      const url = `${SITE_URL}/product/${i.products!.slug}#reviews`;
-      const borderBottom = idx < arr.length - 1 ? `border-bottom:1px solid ${C.border};` : "";
+  // Each item as a detailed card with image, name, qty, price, and review link
+  const itemCards = items.map((i) => {
+    const url = i.products?.slug ? `${SITE_URL}/product/${i.products.slug}#reviews` : null;
+    const img = i.product_image
+      ? `<td style="width:72px;vertical-align:top;padding-right:14px">
+           <img src="${i.product_image}" alt="${i.product_name}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;display:block" />
+         </td>`
+      : "";
 
-      return `
-      <div style="padding:16px 0;text-align:center;${borderBottom}">
-        <p style="margin:0 0 14px;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">
-          ${i.product_name}
-        </p>
-        <a href="${url}" style="display:inline-block;text-decoration:none;background:${C.green};color:#fff;padding:12px 32px;border-radius:50px;font-family:Arial,sans-serif">
-          <span style="font-size:14px;letter-spacing:2px;color:#ffd700;opacity:0.85">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-          <br>
-          <span style="font-size:13px;font-weight:700;letter-spacing:0.04em">Write a Review</span>
-        </a>
-      </div>`;
-    }).join("");
+    const reviewLink = url
+      ? `<a href="${url}" style="display:inline-block;margin-top:8px;background:${C.green};color:#fff;text-decoration:none;padding:7px 20px;border-radius:50px;font-size:11px;font-weight:700;font-family:Arial,sans-serif;letter-spacing:0.04em">Write a Review</a>`
+      : "";
+
+    return `
+    <tr><td style="padding:16px 0;border-bottom:1px solid ${C.border}">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        ${img}
+        <td style="vertical-align:top">
+          <p style="margin:0;font-size:14px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">${i.product_name}</p>
+          <p style="margin:4px 0 0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">
+            Qty: ${i.quantity} &middot; &#8377;${i.price * i.quantity}
+          </p>
+          ${reviewLink}
+        </td>
+      </tr></table>
+    </td></tr>`;
+  }).join("");
 
   return wrap(
     cardHeader("&#127800;", "Your Order Has Arrived!", "We hope you love it"),
     `${orderLabel(order.id as string)}
 
-    <p style="margin:0 0 20px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
+    <p style="margin:0 0 24px;font-size:15px;color:${C.text};line-height:1.7;font-family:Arial,sans-serif">
       Your order has been delivered! We hope your pieces bring you as much joy as we put into crafting them.
       Each one is a little piece of nature, preserved with love. &#127807;
     </p>
 
-    <!-- Items recap -->
+    <!-- Items with images -->
     <p style="margin:0 0 8px;font-size:11px;font-family:Arial,sans-serif;letter-spacing:0.15em;text-transform:uppercase;color:${C.muted};border-bottom:2px solid ${C.border};padding-bottom:8px">What you received</p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px">
-      ${itemsRows(items)}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px">
+      ${itemCards}
+      ${disc > 0 ? `
+      <tr>
+        <td style="padding:10px 0 4px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif">
+          Discount${order.coupon_code ? ` (${order.coupon_code})` : ""}
+        </td>
+        <td style="padding:10px 0 4px;font-size:13px;color:${C.green};text-align:right;font-family:Arial,sans-serif">
+          &minus;&#8377;${disc}
+        </td>
+      </tr>` : ""}
+      <tr>
+        <td colspan="2" style="padding:14px 0 0;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif;text-align:right;letter-spacing:0.02em">
+          Total: &#8377;${order.total}
+        </td>
+      </tr>
     </table>
 
-    <!-- Review section -->
-    <div style="background:${C.bg};border-radius:14px;padding:28px 24px">
-      <p style="margin:0 0 6px;font-size:19px;font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${C.text};text-align:center">
-        Loved your order?
+    <!-- Stars decoration + review prompt -->
+    <div style="text-align:center;margin:28px 0 0">
+      <p style="margin:0 0 4px;font-size:22px;letter-spacing:4px;color:#d4a853;opacity:0.7">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+      <p style="margin:0;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;font-style:italic">
+        Your feedback means the world to us
       </p>
-      <p style="margin:0 0 20px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6;text-align:center">
-        Your feedback helps us grow and create better pieces for you.
-      </p>
-      ${reviewBlocks}
     </div>
 
     ${ctaButton("Shop Again &rarr;", `${SITE_URL}/shop`)}`

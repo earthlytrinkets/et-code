@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Trash2, Loader2, MessageSquare, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +62,13 @@ const ReviewSection = ({ productId }: { productId: string }) => {
   const [comment, setComment] = useState("");
   const [editing, setEditing] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+
+  // Auto-open auth modal when landing on #reviews without being signed in
+  useEffect(() => {
+    if (!user && !isAdmin && window.location.hash === "#reviews") {
+      setAuthOpen(true);
+    }
+  }, [user, isAdmin]);
 
   const startEdit = () => {
     setRating(myReview?.rating ?? 0);

@@ -23,27 +23,11 @@ const CustomOrders = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-
-  // Pre-fill name & email from profile when user is logged in
-  useEffect(() => {
-    if (!user) return;
-    setEmail((prev) => prev || user.email || "");
-    supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.full_name) setName((prev) => prev || data.full_name);
-      });
-  }, [user]);
 
   // Clean up object URLs on unmount
   useEffect(() => {
@@ -104,12 +88,20 @@ const CustomOrders = () => {
     }
     setLoading(true);
     try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const customerName = profile?.full_name || "";
+      const customerEmail = user.email || "";
+
       const imageUrls = await uploadImages();
       const { error } = await supabase
         .from("custom_orders")
         .insert({
-          name,
-          email,
+          name: customerName,
+          email: customerEmail,
           description,
           budget_range: budget || null,
           user_id: user.id,
@@ -120,8 +112,8 @@ const CustomOrders = () => {
       supabase.functions.invoke("send-order-email", {
         body: {
           event: "custom_order_request",
-          customerName: name,
-          customerEmail: email,
+          customerName,
+          customerEmail,
           description,
           budget: budget || null,
         },
@@ -171,31 +163,6 @@ const CustomOrders = () => {
             </div>
           ) : user && (
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="font-body text-sm font-medium text-foreground">Name</label>
-                  <input
-                    required
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="font-body text-sm font-medium text-foreground">Email</label>
-                  <input
-                    required
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-3 font-body text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="font-body text-sm font-medium text-foreground">Description</label>
                 <textarea

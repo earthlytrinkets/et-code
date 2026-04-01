@@ -14,7 +14,15 @@ import { queueAuthRedirect, queueCartAuthIntent } from "@/lib/auth-intent";
 
 const ProductDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  useEffect(() => { window.scrollTo(0, 0); }, [slug]);
+  useEffect(() => {
+    if (window.location.hash === "#reviews") {
+      setTimeout(() => {
+        document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
   const { items, addToCart, updateQuantity, openDrawer } = useCart();
   const { user } = useAuth();
