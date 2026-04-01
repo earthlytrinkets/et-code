@@ -198,6 +198,22 @@ export const AdminSubscribersSection = () => {
   });
 
   const activeCount = subscribers.filter((s) => s.status === "active").length;
+  const unsubscribedCount = subscribers.filter((s) => s.status === "unsubscribed").length;
+
+  const bulkUpdate = useMutation({
+    mutationFn: async (newStatus: "active" | "unsubscribed") => {
+      const fromStatus = newStatus === "active" ? "unsubscribed" : "active";
+      const { error } = await (supabase.from("subscribers" as never) as any)
+        .update({ status: newStatus })
+        .eq("status", fromStatus);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
+      toast.success("All subscribers updated");
+    },
+    onError: () => toast.error("Failed to update subscribers"),
+  });
 
   return (
     <div className="space-y-5">
@@ -232,6 +248,36 @@ export const AdminSubscribersSection = () => {
           </button>
         ))}
       </div>
+
+      {/* Bulk actions */}
+      {subscribers.length > 0 && (
+        <div className="flex gap-2">
+          {unsubscribedCount > 0 && (
+            <button
+              onClick={() => {
+                if (confirm(`Resubscribe all ${unsubscribedCount} unsubscribed subscriber${unsubscribedCount !== 1 ? "s" : ""}?`))
+                  bulkUpdate.mutate("active");
+              }}
+              disabled={bulkUpdate.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 px-3 py-1.5 font-body text-xs font-medium text-green-800 transition-colors hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+            >
+              <UserCheck size={13} /> Subscribe All
+            </button>
+          )}
+          {activeCount > 0 && (
+            <button
+              onClick={() => {
+                if (confirm(`Unsubscribe all ${activeCount} active subscriber${activeCount !== 1 ? "s" : ""}?`))
+                  bulkUpdate.mutate("unsubscribed");
+              }}
+              disabled={bulkUpdate.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 font-body text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+            >
+              <UserX size={13} /> Unsubscribe All
+            </button>
+          )}
+        </div>
+      )}
 
       {/* List */}
       {isLoading ? (
