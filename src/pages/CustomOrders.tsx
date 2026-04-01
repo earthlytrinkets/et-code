@@ -295,6 +295,7 @@ const CustomOrders = () => {
               >
                 {loading ? "Submitting..." : <><span>Submit Enquiry</span> <Send size={14} /></>}
               </button>
+              </div>
             </form>
           )}
         </motion.div>

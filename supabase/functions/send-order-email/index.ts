@@ -286,18 +286,16 @@ function orderDeliveredEmail(order: Order) {
     .map((i, idx, arr) => {
       const url = `${SITE_URL}/product/${i.products!.slug}#reviews`;
       const borderBottom = idx < arr.length - 1 ? `border-bottom:1px solid ${C.border};` : "";
-      const stars = `<a href="${url}" style="text-decoration:none;font-size:20px;letter-spacing:3px;color:#d4a853;opacity:0.6">&#9733;&#9733;&#9733;&#9733;&#9733;</a>`;
 
       return `
       <div style="padding:16px 0;text-align:center;${borderBottom}">
-        <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">
+        <p style="margin:0 0 14px;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">
           ${i.product_name}
         </p>
-        <div style="margin:0 0 14px;line-height:1.8">
-          ${stars}
-        </div>
-        <a href="${url}" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:10px 28px;border-radius:50px;font-size:13px;font-weight:700;font-family:Arial,sans-serif">
-          Write a Review
+        <a href="${url}" style="display:inline-block;text-decoration:none;background:${C.green};color:#fff;padding:12px 32px;border-radius:50px;font-family:Arial,sans-serif">
+          <span style="font-size:14px;letter-spacing:2px;color:#ffd700;opacity:0.85">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+          <br>
+          <span style="font-size:13px;font-weight:700;letter-spacing:0.04em">Write a Review</span>
         </a>
       </div>`;
     }).join("");
@@ -320,10 +318,10 @@ function orderDeliveredEmail(order: Order) {
     <!-- Review section -->
     <div style="background:${C.bg};border-radius:14px;padding:28px 24px">
       <p style="margin:0 0 6px;font-size:19px;font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${C.text};text-align:center">
-        Loved your order? Leave a review!
+        Loved your order?
       </p>
-      <p style="margin:0 0 16px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6;text-align:center">
-        Tap a star rating or write a detailed review — your feedback helps us grow.
+      <p style="margin:0 0 20px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6;text-align:center">
+        Your feedback helps us grow and create better pieces for you.
       </p>
       ${reviewBlocks}
     </div>
