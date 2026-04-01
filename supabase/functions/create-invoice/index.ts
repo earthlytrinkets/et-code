@@ -153,8 +153,8 @@ async function createInvoice(orderId: string) {
     },
     line_items: lineItems,
     currency: "INR",
-    sms_notify: 0,   // we send our own styled emails
-    email_notify: 0,  // no duplicate Razorpay emails
+    sms_notify: 0,    // we send our own SMS
+    email_notify: 1,  // Razorpay sends invoice to customer email
     receipt: order.id.slice(0, 40), // max 40 chars
     notes: {
       order_id: order.id,

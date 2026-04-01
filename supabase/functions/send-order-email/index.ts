@@ -193,7 +193,7 @@ function orderPlacedEmail(order: Order) {
     </table>
 
     ${addressBlock(addr)}
-    ${ctaButton("Track Your Order &rarr;", `${SITE_URL}/profile`)}`
+    ${ctaButton("Track Your Order &rarr;", `${SITE_URL}/profile?section=orders`)}`
   );
 }
 
@@ -244,7 +244,7 @@ function orderConfirmedEmail(order: Order) {
     </table>
 
     ${addressBlock(addr)}
-    ${ctaButton("View Order &rarr;", `${SITE_URL}/profile`)}`
+    ${ctaButton("View Order &rarr;", `${SITE_URL}/profile?section=orders`)}`
   );
 }
 
@@ -274,7 +274,7 @@ function orderShippedEmail(order: Order) {
     </div>` : ""}
 
     ${addressBlock(addr)}
-    ${ctaButton("Track Your Order &rarr;", awb ? `https://shiprocket.co/tracking/${awb}` : `${SITE_URL}/profile`)}`
+    ${ctaButton("Track Your Order &rarr;", awb ? `https://shiprocket.co/tracking/${awb}` : `${SITE_URL}/profile?section=orders`)}`
   );
 }
 

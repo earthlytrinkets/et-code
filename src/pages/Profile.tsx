@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { AdminProductsSection } from "@/pages/admin/Products";
 import { AdminOrdersSection } from "@/pages/admin/Orders";
 import { AdminSubscribersSection } from "@/pages/admin/Subscribers";
@@ -1131,6 +1132,34 @@ const ProfilePage = () => {
     },
     onError: () => toast.error("Failed to update profile"),
   });
+
+  const [authOpen, setAuthOpen] = useState(!user && !loading);
+  // Show auth modal when unauthenticated user lands on profile (e.g. from email link)
+  useEffect(() => {
+    if (!loading && !user) setAuthOpen(true);
+    if (user) setAuthOpen(false);
+  }, [loading, user]);
+
+  if (!loading && !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-20 text-center">
+          <ShoppingBag size={40} className="mx-auto text-muted-foreground/30" />
+          <p className="mt-4 font-display text-xl font-bold text-foreground">Sign in to continue</p>
+          <p className="mt-2 font-body text-sm text-muted-foreground">You need to be signed in to view your account and orders.</p>
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
+          >
+            Sign In
+          </button>
+          <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (loading || profileLoading) {
     return (
