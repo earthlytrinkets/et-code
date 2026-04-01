@@ -162,9 +162,13 @@ async function createInvoice(orderId: string) {
     },
   };
 
-  // For prepaid orders, mark as paid immediately with payment_id
-  // Razorpay requires draft → issue flow, but we can create as issued
-  // For COD, create as issued (customer can see it but hasn't paid)
+  // Prepaid: link the existing Razorpay order_id so the invoice auto-marks as paid.
+  //          Customer gets an invoice email showing "Paid".
+  // COD:     created as issued — customer gets invoice email with payment pending.
+  //          Cancelled when order is delivered (payment collected offline).
+  if (isPrepaid && order.razorpay_order_id) {
+    invoicePayload.order_id = order.razorpay_order_id;
+  }
 
   console.log("Creating Razorpay invoice for order:", oid, "method:", order.payment_method);
 
@@ -188,23 +192,6 @@ async function createInvoice(orderId: string) {
     .from("orders")
     .update({ razorpay_invoice_id: invoice.id })
     .eq("id", orderId);
-
-  // If prepaid and we have a payment_id, mark it as paid via Razorpay API
-  if (isPrepaid && order.razorpay_payment_id) {
-    console.log("Marking prepaid invoice as paid, payment_id:", order.razorpay_payment_id);
-
-    // Issue the invoice first (draft → issued)
-    if (invoice.status === "draft") {
-      await fetch(`${RAZORPAY_BASE}/invoices/${invoice.id}/issue`, {
-        method: "POST",
-        headers: razorpayHeaders(),
-      });
-    }
-
-    // Cancel the payment link since it's already paid
-    // For prepaid, we just update our notes — Razorpay will auto-reconcile
-    // via the payment_id linked to the razorpay_order_id
-  }
 
   return json({
     ok: true,
