@@ -55,11 +55,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.user) syncGoogleProfile(session.user);
+
+      // After OAuth redirect, Supabase replaces the URL hash with auth tokens.
+      // Restore the original hash (e.g. #reviews) so scroll-to-section still works.
+      if (event === "SIGNED_IN") {
+        const savedHash = sessionStorage.getItem("et_auth_hash");
+        if (savedHash) {
+          sessionStorage.removeItem("et_auth_hash");
+          window.location.hash = savedHash;
+        }
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

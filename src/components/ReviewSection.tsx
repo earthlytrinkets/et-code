@@ -68,6 +68,10 @@ const ReviewSection = ({ productId }: { productId: string }) => {
     if (!user && !isAdmin && window.location.hash === "#reviews") {
       setAuthOpen(true);
     }
+    // Close auth modal once user signs in
+    if (user && authOpen) {
+      setAuthOpen(false);
+    }
   }, [user, isAdmin]);
 
   const startEdit = () => {

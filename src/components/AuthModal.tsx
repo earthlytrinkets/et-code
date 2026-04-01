@@ -41,6 +41,10 @@ const AuthModal = ({ open, onClose }: AuthModalProps) => {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
+    // Save current hash so it can be restored after OAuth redirect
+    if (window.location.hash) {
+      sessionStorage.setItem("et_auth_hash", window.location.hash);
+    }
     const signedOut = localStorage.getItem("et_signed_out") === "true";
     if (signedOut) localStorage.removeItem("et_signed_out");
     const { error } = await supabase.auth.signInWithOAuth({

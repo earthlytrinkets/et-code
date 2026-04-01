@@ -22,6 +22,16 @@ const ProductDetail = () => {
     } else {
       window.scrollTo(0, 0);
     }
+    // Listen for hash changes (e.g. restored after OAuth redirect)
+    const onHashChange = () => {
+      if (window.location.hash === "#reviews") {
+        setTimeout(() => {
+          document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, [slug]);
   const { data: product, isLoading } = useProduct(slug ?? "");
   const { items, addToCart, updateQuantity, openDrawer } = useCart();
