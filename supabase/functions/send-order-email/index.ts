@@ -281,21 +281,31 @@ function orderShippedEmail(order: Order) {
 function orderDeliveredEmail(order: Order) {
   const items  = order.order_items as Item[];
 
-  const reviewRows = items
+  const reviewBlocks = items
     .filter((i) => i.products?.slug)
-    .map((i) => {
+    .map((i, idx, arr) => {
       const url = `${SITE_URL}/product/${i.products!.slug}#reviews`;
+      const borderBottom = idx < arr.length - 1 ? `border-bottom:1px solid ${C.border};` : "";
+      const stars = [1, 2, 3, 4, 5].map((n) => {
+        const emoji = "&#11088;".repeat(n);
+        const bg = n === 5 ? C.green : C.white;
+        const border = n === 5 ? C.green : C.border;
+        const color = n === 5 ? "#fff" : C.text;
+        return `<a href="${url}" style="display:inline-block;background:${bg};border:1px solid ${border};border-radius:6px;padding:5px 7px;font-size:13px;text-decoration:none;line-height:1;color:${color}">${emoji}</a>`;
+      }).join(" ");
+
       return `
-      <tr>
-        <td style="padding:10px 0;border-bottom:1px solid ${C.border};font-size:14px;color:${C.text};font-family:Arial,sans-serif">
+      <div style="padding:16px 0;text-align:center;${borderBottom}">
+        <p style="margin:0 0 12px;font-size:15px;font-weight:700;color:${C.text};font-family:Arial,sans-serif">
           ${i.product_name}
-        </td>
-        <td style="padding:10px 0;border-bottom:1px solid ${C.border};text-align:right">
-          <a href="${url}" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:7px 16px;border-radius:50px;font-size:12px;font-weight:700;font-family:Arial,sans-serif">
-            Write a Review
-          </a>
-        </td>
-      </tr>`;
+        </p>
+        <div style="margin:0 0 14px;line-height:1.8">
+          ${stars}
+        </div>
+        <a href="${url}" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:10px 28px;border-radius:50px;font-size:13px;font-weight:700;font-family:Arial,sans-serif">
+          Write a Review
+        </a>
+      </div>`;
     }).join("");
 
   return wrap(
@@ -314,18 +324,14 @@ function orderDeliveredEmail(order: Order) {
     </table>
 
     <!-- Review section -->
-    <div style="background:${C.bg};border-radius:14px;padding:28px 24px;text-align:center">
-      <p style="margin:0 0 6px;font-size:19px;font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${C.text}">
+    <div style="background:${C.bg};border-radius:14px;padding:28px 24px">
+      <p style="margin:0 0 6px;font-size:19px;font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${C.text};text-align:center">
         Loved your order? Leave a review!
       </p>
-      <p style="margin:0 0 20px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6">
-        Your feedback means the world to us and helps other customers find the perfect piece.
+      <p style="margin:0 0 16px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6;text-align:center">
+        Tap a star rating or write a detailed review — your feedback helps us grow.
       </p>
-
-      ${reviewRows ? `
-      <table width="100%" cellpadding="0" cellspacing="0" style="text-align:left">
-        ${reviewRows}
-      </table>` : ""}
+      ${reviewBlocks}
     </div>
 
     ${ctaButton("Shop Again &rarr;", `${SITE_URL}/shop`)}`
