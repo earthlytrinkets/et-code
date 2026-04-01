@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -322,6 +323,7 @@ const CouponModal = ({
 export const AdminCouponsSection = () => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<CouponRow | "new" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CouponRow | null>(null);
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ["admin-coupons"],
@@ -485,11 +487,7 @@ export const AdminCouponsSection = () => {
                       <Pencil size={14} />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`Delete coupon "${coupon.code}"?`)) {
-                          remove.mutate(coupon.id);
-                        }
-                      }}
+                      onClick={() => setDeleteTarget(coupon)}
                       className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       title="Delete coupon"
                     >
@@ -509,6 +507,16 @@ export const AdminCouponsSection = () => {
           onClose={() => setEditing(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Coupon"
+        description={`Are you sure you want to delete coupon "${deleteTarget?.code}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteTarget) { remove.mutate(deleteTarget.id); setDeleteTarget(null); } }}
+      />
     </div>
   );
 };

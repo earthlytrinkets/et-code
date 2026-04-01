@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts, useCategories } from "@/hooks/useProducts";
 import type { Product } from "@/types/product";
 import Navbar from "@/components/Navbar";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "sonner";
 import {
   Plus, Pencil, Trash2, Eye, EyeOff, Star, Upload, X, ImageIcon, GripVertical,
@@ -459,6 +460,7 @@ export const AdminProductsSection = () => {
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Product | null | "new">(null);
   const [rows, setRows] = useState<Product[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   // sync rows when products load/change
   const sorted = [...products].sort((a, b) => a.display_order - b.display_order);
@@ -565,7 +567,7 @@ export const AdminProductsSection = () => {
                       p={p}
                       onEdit={() => setEditing(p)}
                       onToggle={(field, value) => toggle.mutate({ id: p.id, field, value })}
-                      onDelete={() => { if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id); }}
+                      onDelete={() => setDeleteTarget(p)}
                     />
                   ))}
                 </tbody>
@@ -587,6 +589,16 @@ export const AdminProductsSection = () => {
           onClose={() => setEditing(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Product"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => { if (deleteTarget) { remove.mutate(deleteTarget.id); setDeleteTarget(null); } }}
+      />
     </div>
   );
 };

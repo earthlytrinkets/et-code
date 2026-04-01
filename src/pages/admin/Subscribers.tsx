@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAllProducts } from "@/hooks/useProducts";
 import Navbar from "@/components/Navbar";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "sonner";
-import { Mail, Send, RefreshCw, UserX, UserCheck, Trash2, X, Loader2 } from "lucide-react";
+import { Mail, Send, UserX, UserCheck, Trash2, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -136,7 +137,19 @@ const NotifyModal = ({ open, onClose }: { open: boolean; onClose: () => void }) 
 export const AdminSubscribersSection = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "unsubscribed">("all");
   const [notifyOpen, setNotifyOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    variant: "default" | "destructive";
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", confirmLabel: "Confirm", variant: "default", onConfirm: () => {} });
   const queryClient = useQueryClient();
+
+  const openConfirm = (opts: Omit<typeof confirmState, "open">) =>
+    setConfirmState({ ...opts, open: true });
+  const closeConfirm = () => setConfirmState((prev) => ({ ...prev, open: false }));
 
   const { data: subscribers = [], isLoading } = useQuery({
     queryKey: ["admin-subscribers", statusFilter],
@@ -167,7 +180,6 @@ export const AdminSubscribersSection = () => {
       return { previous };
     },
     onSuccess: (_data, { id, newStatus }) => {
-      // Update all filter caches so switching tabs is consistent
       for (const filter of ["all", "active", "unsubscribed"] as const) {
         queryClient.setQueryData<Subscriber[]>(["admin-subscribers", filter], (old) =>
           old?.map((s) => (s.id === id ? { ...s, status: newStatus as Subscriber["status"] } : s))
@@ -253,10 +265,13 @@ export const AdminSubscribersSection = () => {
           <div className="flex gap-2">
             {unsubscribedCount > 0 && (
               <button
-                onClick={() => {
-                  if (confirm(`Resubscribe all ${unsubscribedCount} unsubscribed subscriber${unsubscribedCount !== 1 ? "s" : ""}?`))
-                    bulkUpdate.mutate("active");
-                }}
+                onClick={() => openConfirm({
+                  title: "Subscribe All",
+                  description: `This will resubscribe all ${unsubscribedCount} unsubscribed subscriber${unsubscribedCount !== 1 ? "s" : ""}. They will start receiving notifications again.`,
+                  confirmLabel: "Subscribe All",
+                  variant: "default",
+                  onConfirm: () => bulkUpdate.mutate("active"),
+                })}
                 disabled={bulkUpdate.isPending}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 px-3 py-1.5 font-body text-xs font-medium text-green-800 transition-colors hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
               >
@@ -265,10 +280,13 @@ export const AdminSubscribersSection = () => {
             )}
             {activeCount > 0 && (
               <button
-                onClick={() => {
-                  if (confirm(`Unsubscribe all ${activeCount} active subscriber${activeCount !== 1 ? "s" : ""}?`))
-                    bulkUpdate.mutate("unsubscribed");
-                }}
+                onClick={() => openConfirm({
+                  title: "Unsubscribe All",
+                  description: `This will unsubscribe all ${activeCount} active subscriber${activeCount !== 1 ? "s" : ""}. They will stop receiving notifications.`,
+                  confirmLabel: "Unsubscribe All",
+                  variant: "destructive",
+                  onConfirm: () => bulkUpdate.mutate("unsubscribed"),
+                })}
                 disabled={bulkUpdate.isPending}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 font-body text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
               >
@@ -329,11 +347,13 @@ export const AdminSubscribersSection = () => {
                 {sub.status === "active" ? <UserX size={14} /> : <UserCheck size={14} />}
               </button>
               <button
-                onClick={() => {
-                  if (confirm(`Delete ${sub.email}?`)) {
-                    deleteSubscriber.mutate(sub.id);
-                  }
-                }}
+                onClick={() => openConfirm({
+                  title: "Delete Subscriber",
+                  description: `Are you sure you want to delete ${sub.email}? This action cannot be undone.`,
+                  confirmLabel: "Delete",
+                  variant: "destructive",
+                  onConfirm: () => deleteSubscriber.mutate(sub.id),
+                })}
                 disabled={deleteSubscriber.isPending}
                 className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors disabled:opacity-50"
                 title="Delete subscriber"
@@ -346,6 +366,15 @@ export const AdminSubscribersSection = () => {
       )}
 
       <NotifyModal open={notifyOpen} onClose={() => setNotifyOpen(false)} />
+      <ConfirmDialog
+        open={confirmState.open}
+        onOpenChange={(open) => { if (!open) closeConfirm(); }}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel={confirmState.confirmLabel}
+        variant={confirmState.variant}
+        onConfirm={() => { confirmState.onConfirm(); closeConfirm(); }}
+      />
     </div>
   );
 };
