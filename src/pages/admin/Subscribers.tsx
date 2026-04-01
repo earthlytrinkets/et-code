@@ -251,7 +251,7 @@ export const AdminSubscribersSection = () => {
 
       {/* Bulk actions */}
       {subscribers.length > 0 && (
-        <div className="flex gap-2">
+        <div className="flex justify-end gap-2">
           {unsubscribedCount > 0 && (
             <button
               onClick={() => {
