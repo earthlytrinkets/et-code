@@ -204,6 +204,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   shipping_method     TEXT          CHECK (shipping_method IN ('personal', 'shiprocket')),
   razorpay_order_id   TEXT,
   razorpay_payment_id TEXT,
+  razorpay_invoice_id TEXT,          -- Razorpay Invoices API invoice ID
   shiprocket_order_id TEXT,
   shiprocket_awb      TEXT,
   notes               TEXT,

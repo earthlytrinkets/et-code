@@ -97,6 +97,12 @@ const sendStatusEmail = (orderId: string, status: OrderStatus) => {
   const event = STATUS_EMAIL_EVENT[status];
   if (!event) return;
   supabase.functions.invoke("send-order-email", { body: { event, orderId } }).catch(console.error);
+  // Mark COD invoice as paid when admin marks order as delivered
+  if (status === "delivered") {
+    supabase.functions.invoke("create-invoice", {
+      body: { action: "mark_paid", orderId },
+    }).catch(console.error);
+  }
 };
 
 // ─── Shiprocket helpers ───────────────────────────────────────────────────────

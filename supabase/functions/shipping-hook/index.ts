@@ -176,6 +176,13 @@ Deno.serve(async (req) => {
       }).catch((e: unknown) => console.error("Email send failed:", e));
     }
 
+    // Mark COD invoice as paid on delivery
+    if (newStatus === "delivered") {
+      supabase.functions.invoke("create-invoice", {
+        body: { action: "mark_paid", orderId: order.id },
+      }).catch((e: unknown) => console.error("Invoice mark_paid failed:", e));
+    }
+
     console.log(`Order ${order.id} updated: ${order.status} → ${newStatus}${awb ? ` (AWB: ${awb})` : ""}`);
 
     return new Response(JSON.stringify({ ok: true, orderId: order.id, status: newStatus }), {
