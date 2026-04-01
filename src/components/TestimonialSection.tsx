@@ -77,16 +77,23 @@ const TestimonialSection = () => {
 
     let animId: number;
     let lastTime = 0;
+    let setWidth = 0;
     const speed = 50; // pixels per second
 
+    const measure = () => { setWidth = setEl.scrollWidth; };
+
+    // Measure after layout settles
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(setEl);
+
     const step = (time: number) => {
-      if (lastTime && !pausedRef.current) {
+      if (lastTime && !pausedRef.current && setWidth > 0) {
         const dt = (time - lastTime) / 1000;
         posRef.current += speed * dt;
 
-        // setEl.offsetWidth includes the pr-6 padding, giving exact set width
-        const setWidth = setEl.offsetWidth;
-        if (setWidth > 0 && posRef.current >= setWidth) {
+        // Wrap seamlessly — modulo keeps us in the first-set range
+        if (posRef.current >= setWidth) {
           posRef.current -= setWidth;
         }
 
@@ -97,7 +104,7 @@ const TestimonialSection = () => {
     };
 
     animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
+    return () => { cancelAnimationFrame(animId); ro.disconnect(); };
   }, [items.length]);
 
   return (
@@ -122,17 +129,14 @@ const TestimonialSection = () => {
           onTouchStart={() => { pausedRef.current = true; }}
           onTouchEnd={() => { pausedRef.current = false; }}
         >
-          {/* Two identical sets — pr-6 after each set matches the gap between cards */}
-          <div ref={setRef} className="flex gap-6 shrink-0 pr-6">
-            {items.map((review, i) => (
-              <ReviewCard key={`${review.id}-a-${i}`} review={review} />
-            ))}
-          </div>
-          <div className="flex gap-6 shrink-0 pr-6">
-            {items.map((review, i) => (
-              <ReviewCard key={`${review.id}-b-${i}`} review={review} />
-            ))}
-          </div>
+          {/* Three identical sets — ensures seamless wrap even with few items */}
+          {["a", "b", "c"].map((key) => (
+            <div key={key} ref={key === "a" ? setRef : undefined} className="flex gap-6 shrink-0 pr-6">
+              {items.map((review, i) => (
+                <ReviewCard key={`${review.id}-${key}-${i}`} review={review} />
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </section>

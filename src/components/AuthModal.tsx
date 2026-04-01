@@ -74,7 +74,7 @@ const AuthModal = ({ open, onClose }: AuthModalProps) => {
     if (tab === "signup") {
       const { error } = await supabase.auth.signUp({
         email, password,
-        options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+        options: { data: { full_name: fullName }, emailRedirectTo: window.location.href },
       });
       if (error) toast.error(error.message);
       else { toast.success("Check your email to confirm your account!"); handleClose(); }

@@ -99,7 +99,7 @@ function wrap(headerRow: string, bodyContent: string) {
 
 // ─── Reusable components ──────────────────────────────────────────────────────
 
-type Item = { product_name: string; quantity: number; price: number };
+type Item = { product_name: string; quantity: number; price: number; products?: { slug: string } | null };
 type Addr = Record<string, string>;
 
 function itemsRows(items: Item[]) {
@@ -280,19 +280,23 @@ function orderShippedEmail(order: Order) {
 
 function orderDeliveredEmail(order: Order) {
   const items  = order.order_items as Item[];
-  const oid    = orderId8(order.id as string);
 
-  const starRow = [1, 2, 3, 4, 5].map((n) => {
-    const stars   = "&#11088;".repeat(n);
-    const subject = encodeURIComponent(`${"⭐".repeat(n)} Review for ${oid}`);
-    const body    = encodeURIComponent(`My rating: ${"⭐".repeat(n)} (${n}/5)\nComments: `);
-    const bg      = n === 5 ? C.green : C.white;
-    const border  = n === 5 ? C.green : C.border;
-    return `<td style="padding:0 3px">
-      <a href="mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}"
-         style="display:inline-block;background:${bg};border:1px solid ${border};border-radius:8px;padding:9px 12px;font-size:18px;text-decoration:none;line-height:1">${stars}</a>
-    </td>`;
-  }).join("");
+  const reviewRows = items
+    .filter((i) => i.products?.slug)
+    .map((i) => {
+      const url = `${SITE_URL}/product/${i.products!.slug}#reviews`;
+      return `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid ${C.border};font-size:14px;color:${C.text};font-family:Arial,sans-serif">
+          ${i.product_name}
+        </td>
+        <td style="padding:10px 0;border-bottom:1px solid ${C.border};text-align:right">
+          <a href="${url}" style="display:inline-block;background:${C.green};color:#fff;text-decoration:none;padding:7px 16px;border-radius:50px;font-size:12px;font-weight:700;font-family:Arial,sans-serif">
+            Write a Review
+          </a>
+        </td>
+      </tr>`;
+    }).join("");
 
   return wrap(
     cardHeader("&#127800;", "Your Order Has Arrived!", "We hope you love it"),
@@ -312,20 +316,16 @@ function orderDeliveredEmail(order: Order) {
     <!-- Review section -->
     <div style="background:${C.bg};border-radius:14px;padding:28px 24px;text-align:center">
       <p style="margin:0 0 6px;font-size:19px;font-family:Georgia,'Times New Roman',serif;font-style:italic;color:${C.text}">
-        How was your experience?
+        Loved your order? Leave a review!
       </p>
       <p style="margin:0 0 20px;font-size:13px;color:${C.muted};font-family:Arial,sans-serif;line-height:1.6">
-        Your feedback means the world to us. Tap a star to send us a quick review!
+        Your feedback means the world to us and helps other customers find the perfect piece.
       </p>
 
-      <table align="center" cellpadding="0" cellspacing="0">
-        <tr>${starRow}</tr>
-      </table>
-
-      <p style="margin:18px 0 0;font-size:12px;color:${C.muted};font-family:Arial,sans-serif">
-        Or write to us at
-        <a href="mailto:${ADMIN_EMAIL}" style="color:${C.green};text-decoration:none">${ADMIN_EMAIL}</a>
-      </p>
+      ${reviewRows ? `
+      <table width="100%" cellpadding="0" cellspacing="0" style="text-align:left">
+        ${reviewRows}
+      </table>` : ""}
     </div>
 
     ${ctaButton("Shop Again &rarr;", `${SITE_URL}/shop`)}`
@@ -726,7 +726,7 @@ serve(async (req) => {
 
     const { data: order, error } = await supabase
       .from("orders")
-      .select("*, order_items(*)")
+      .select("*, order_items(*, products(slug))")
       .eq("id", orderId)
       .single();
     if (error || !order) throw new Error("Order not found");
