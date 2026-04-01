@@ -152,6 +152,7 @@ const OrderRow = ({ order }: { order: Order }) => {
     },
     onSuccess: (_, patch) => {
       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-new-order-count"] });
       toast.success("Order updated");
       const newStatus = (patch as Partial<Order>).status;
       if (newStatus) sendStatusEmail(order.id, newStatus);

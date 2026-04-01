@@ -30,10 +30,14 @@ const Footer = () => (
           <h4 className="font-display text-sm font-semibold text-foreground">Shop</h4>
           <ul className="mt-3 space-y-2">
             {[
-              ["Jewellery", "/shop?category=jewellery"],
-              ["Paperweights", "/shop?category=paperweights"],
+              ["Bracelets", "/shop?category=bracelets"],
+              ["Earrings", "/shop?category=earrings"],
               ["Home Decor", "/shop?category=home-decor"],
-              ["Custom Pieces", "/shop?category=custom-pieces"],
+              ["Keychains", "/shop?category=keychains"],
+              ["Necklaces", "/shop?category=necklaces"],
+              ["Paperweights", "/shop?category=paperweights"],
+              ["Pendants", "/shop?category=pendants"],
+              ["Rings", "/shop?category=rings"],
             ].map(([label, to]) => (
               <li key={label}>
                 <Link to={to} className="font-body text-sm text-muted-foreground transition-colors hover:text-primary">{label}</Link>

@@ -1077,6 +1077,7 @@ const ProfilePage = () => {
   // Count new (confirmed) orders for admin badge
   const { data: newOrderCount = 0 } = useQuery({
     queryKey: ["admin-new-order-count"],
+    staleTime: 15_000,
     queryFn: async () => {
       const { count, error } = await supabase
         .from("orders")
@@ -1091,6 +1092,7 @@ const ProfilePage = () => {
 
   const { data: newCustomOrderCount = 0 } = useQuery({
     queryKey: ["admin-new-custom-order-count"],
+    staleTime: 15_000,
     queryFn: async () => {
       const { count, error } = await supabase
         .from("custom_orders")
@@ -1244,12 +1246,12 @@ const ProfilePage = () => {
                       </span>
                     )}
                     {item.id === "admin-orders" && newOrderCount > 0 && (
-                      <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-semibold text-primary-foreground">
+                      <span className="min-w-[20px] rounded-full bg-primary px-1.5 py-0.5 text-center font-body text-[10px] font-semibold text-primary-foreground">
                         {newOrderCount}
                       </span>
                     )}
                     {item.id === "admin-custom-orders" && newCustomOrderCount > 0 && (
-                      <span className="rounded-full bg-primary px-1.5 py-0.5 font-body text-[10px] font-semibold text-primary-foreground">
+                      <span className="min-w-[20px] rounded-full bg-primary px-1.5 py-0.5 text-center font-body text-[10px] font-semibold text-primary-foreground">
                         {newCustomOrderCount}
                       </span>
                     )}

@@ -40,6 +40,7 @@ const CustomOrderRow = ({ order }: { order: CustomOrder }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-custom-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-new-custom-order-count"] });
       toast.success("Status updated");
     },
     onError: () => toast.error("Failed to update status"),
