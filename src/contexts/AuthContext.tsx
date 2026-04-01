@@ -61,13 +61,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       if (session?.user) syncGoogleProfile(session.user);
 
-      // After OAuth redirect, Supabase replaces the URL hash with auth tokens.
-      // Restore the original hash (e.g. #reviews) so scroll-to-section still works.
+      // After OAuth redirect, navigate back to the page the user was on
       if (event === "SIGNED_IN") {
-        const savedHash = sessionStorage.getItem("et_auth_hash");
-        if (savedHash) {
-          sessionStorage.removeItem("et_auth_hash");
-          window.location.hash = savedHash;
+        const returnUrl = sessionStorage.getItem("et_auth_return_url");
+        if (returnUrl) {
+          sessionStorage.removeItem("et_auth_return_url");
+          const current = window.location.origin + window.location.pathname;
+          const target = new URL(returnUrl);
+          const targetBase = target.origin + target.pathname;
+          // Only redirect if we're not already on the right page
+          if (current !== targetBase) {
+            window.location.replace(returnUrl);
+          } else if (target.hash) {
+            window.location.hash = target.hash;
+          }
         }
       }
     });
