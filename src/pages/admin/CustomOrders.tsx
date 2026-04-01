@@ -168,8 +168,8 @@ export const AdminCustomOrdersSection = () => {
   return (
     <div className="space-y-5">
       <div className="mb-1">
-        <h2 className="font-display text-xl font-bold text-foreground">Custom Orders</h2>
-        <p className="mt-1 font-body text-sm text-muted-foreground">Manage custom order requests from customers</p>
+        <h2 className="font-display text-xl font-bold text-foreground">Custom Order Enquiries</h2>
+        <p className="mt-1 font-body text-sm text-muted-foreground">Manage custom order enquiries from customers</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -217,7 +217,7 @@ export const AdminCustomOrdersSection = () => {
         <div className="space-y-3">
           {orders.map((order) => <CustomOrderRow key={order.id} order={order} />)}
           {orders.length === 0 && (
-            <div className="py-20 text-center font-body text-muted-foreground">No custom order requests found.</div>
+            <div className="py-20 text-center font-body text-muted-foreground">No custom order enquiries found.</div>
           )}
         </div>
       )}

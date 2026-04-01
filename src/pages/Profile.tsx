@@ -1001,7 +1001,7 @@ const adminNavItems: { id: Section; label: string; icon: React.ElementType; desc
   { id: "profile",         label: "Account",  icon: User,            description: "Name, email & photo" },
   { id: "admin-products",  label: "Products", icon: Package,         description: "Manage catalogue" },
   { id: "admin-orders",    label: "Orders",   icon: LayoutDashboard, description: "Shop orders & shipping" },
-  { id: "admin-custom-orders", label: "Custom Orders", icon: Palette, description: "Custom order requests" },
+  { id: "admin-custom-orders", label: "Custom Enquiries", icon: Palette, description: "Custom order enquiries" },
   { id: "admin-coupons",   label: "Coupons",  icon: Tag,             description: "Discount rules & expiry" },
   { id: "admin-subscribers", label: "Subscribers", icon: Mail, description: "Newsletter & notifications" },
 ];

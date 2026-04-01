@@ -49,10 +49,6 @@ const CustomOrders = () => {
   }, [files]);
 
   const addFiles = (incoming: FileList | File[]) => {
-    if (!user) {
-      toast.error("Please sign in to upload reference images");
-      return;
-    }
     const accepted: PreviewFile[] = [];
     for (const file of Array.from(incoming)) {
       if (files.length + accepted.length >= MAX_FILES) {
@@ -80,11 +76,12 @@ const CustomOrders = () => {
   };
 
   const uploadImages = async (): Promise<string[]> => {
-    if (!files.length || !user) return [];
+    if (!files.length) return [];
+    const folder = user?.id ?? "anonymous";
     const urls: string[] = [];
     for (const { file } of files) {
       const ext = file.name.split(".").pop();
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const path = `${folder}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from("custom-order-images")
         .upload(path, file, { contentType: file.type });
@@ -124,7 +121,7 @@ const CustomOrders = () => {
         },
       }).catch(console.error);
     } catch {
-      toast.error("Failed to submit request. Please try again.");
+      toast.error("Failed to submit enquiry. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -142,14 +139,14 @@ const CustomOrders = () => {
       {!authLoading && <main className="container mx-auto px-4 py-12 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
           <p className="font-body text-xs font-semibold uppercase tracking-[0.2em] text-primary">Made just for you</p>
-          <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">Custom Orders</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold text-foreground md:text-4xl">Custom Order Enquiry</h1>
           <p className="mt-4 font-body text-sm leading-relaxed text-muted-foreground">
             Have a special memory you'd like preserved? A unique design in mind? We'd love to bring your vision to life in resin.
           </p>
 
           {submitted ? (
             <div className="mt-12 rounded-xl bg-card p-12 text-center shadow-soft">
-              <p className="font-display text-xl font-semibold text-foreground">Request Submitted!</p>
+              <p className="font-display text-xl font-semibold text-foreground">Enquiry Submitted!</p>
               <p className="mt-2 font-body text-sm text-muted-foreground">We'll get back to you within 48 hours.</p>
             </div>
           ) : (
@@ -214,7 +211,7 @@ const CustomOrders = () => {
 
               <div>
                 <label className="font-body text-sm font-medium text-foreground">
-                  Reference Images <span className="text-muted-foreground font-normal">(optional{!user ? ", sign in to upload" : `, up to ${MAX_FILES}`})</span>
+                  Reference Images <span className="text-muted-foreground font-normal">(optional, up to {MAX_FILES})</span>
                 </label>
                 <input
                   ref={fileInputRef}
@@ -227,21 +224,19 @@ const CustomOrders = () => {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={() => user ? fileInputRef.current?.click() : toast.error("Please sign in to upload reference images")}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { user ? fileInputRef.current?.click() : toast.error("Please sign in to upload reference images"); } }}
+                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click(); }}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={handleDrop}
                   className={`mt-1.5 flex items-center justify-center rounded-lg border-2 border-dashed bg-card p-8 text-center transition-colors cursor-pointer ${
-                    !user ? "opacity-60 cursor-not-allowed" : dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                   }`}
                 >
                   <div>
                     <Upload size={24} className="mx-auto text-muted-foreground" />
-                    <p className="mt-2 font-body text-xs text-muted-foreground">
-                      {user ? "Click or drag to upload" : "Sign in to upload reference images"}
-                    </p>
-                    {user && <p className="mt-1 font-body text-[10px] text-muted-foreground/60">JPG, PNG, WebP — max 10 MB each</p>}
+                    <p className="mt-2 font-body text-xs text-muted-foreground">Click or drag to upload</p>
+                    <p className="mt-1 font-body text-[10px] text-muted-foreground/60">JPG, PNG, WebP — max 10 MB each</p>
                   </div>
                 </div>
 
@@ -277,7 +272,7 @@ const CustomOrders = () => {
                 disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow disabled:opacity-50"
               >
-                {loading ? "Submitting..." : <><span>Submit Request</span> <Send size={14} /></>}
+                {loading ? "Submitting..." : <><span>Submit Enquiry</span> <Send size={14} /></>}
               </button>
             </form>
           )}

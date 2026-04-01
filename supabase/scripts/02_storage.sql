@@ -95,6 +95,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 DROP POLICY IF EXISTS "Public read custom order images"       ON storage.objects;
 DROP POLICY IF EXISTS "Users upload own custom order images"   ON storage.objects;
+DROP POLICY IF EXISTS "Anon upload custom order images"        ON storage.objects;
 DROP POLICY IF EXISTS "Users delete own custom order images"   ON storage.objects;
 DROP POLICY IF EXISTS "Admins delete custom order images"      ON storage.objects;
 
@@ -104,6 +105,10 @@ CREATE POLICY "Public read custom order images" ON storage.objects
 CREATE POLICY "Users upload own custom order images" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+CREATE POLICY "Anon upload custom order images" ON storage.objects
+  FOR INSERT TO anon
+  WITH CHECK (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = 'anonymous');
 
 CREATE POLICY "Users delete own custom order images" ON storage.objects
   FOR DELETE TO authenticated

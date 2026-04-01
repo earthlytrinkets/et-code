@@ -47,7 +47,7 @@ const Footer = () => (
           <ul className="mt-3 space-y-2">
             {[
               ["About", "/about"],
-              ["Custom Orders", "/custom-orders"],
+              ["Custom Order Enquiry", "/custom-orders"],
               ["Contact", "/contact"],
             ].map(([label, to]) => (
               <li key={label}>
