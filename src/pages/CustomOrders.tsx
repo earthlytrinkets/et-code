@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AuthModal from "@/components/AuthModal";
 import { motion } from "framer-motion";
-import { Upload, Send, X, ImageIcon } from "lucide-react";
+import { Upload, Send, X, ImageIcon, LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ const CustomOrders = () => {
   const [budget, setBudget] = useState("");
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Pre-fill name & email from profile when user is logged in
   useEffect(() => {
@@ -76,8 +78,8 @@ const CustomOrders = () => {
   };
 
   const uploadImages = async (): Promise<string[]> => {
-    if (!files.length) return [];
-    const folder = user?.id ?? "anonymous";
+    if (!files.length || !user) return [];
+    const folder = user.id;
     const urls: string[] = [];
     for (const { file } of files) {
       const ext = file.name.split(".").pop();
@@ -96,6 +98,10 @@ const CustomOrders = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     setLoading(true);
     try {
       const imageUrls = await uploadImages();
@@ -106,7 +112,7 @@ const CustomOrders = () => {
           email,
           description,
           budget_range: budget || null,
-          user_id: user?.id ?? null,
+          user_id: user.id,
           reference_images: imageUrls,
         });
       if (error) throw error;
@@ -144,12 +150,26 @@ const CustomOrders = () => {
             Have a special memory you'd like preserved? A unique design in mind? We'd love to bring your vision to life in resin.
           </p>
 
+          {!user && !authLoading && (
+            <div className="mt-8 rounded-xl border border-border bg-card p-6 text-center shadow-soft">
+              <LogIn size={24} className="mx-auto text-primary" />
+              <p className="mt-3 font-body text-sm font-medium text-foreground">Sign in to submit a custom order enquiry</p>
+              <p className="mt-1 font-body text-xs text-muted-foreground">You need an account so we can track your enquiry and respond to you.</p>
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-body text-sm font-semibold text-primary-foreground transition-all hover:shadow-glow"
+              >
+                <LogIn size={14} /> Sign In
+              </button>
+            </div>
+          )}
+
           {submitted ? (
             <div className="mt-12 rounded-xl bg-card p-12 text-center shadow-soft">
               <p className="font-display text-xl font-semibold text-foreground">Enquiry Submitted!</p>
               <p className="mt-2 font-body text-sm text-muted-foreground">We'll get back to you within 48 hours.</p>
             </div>
-          ) : (
+          ) : user && (
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
@@ -278,6 +298,7 @@ const CustomOrders = () => {
           )}
         </motion.div>
       </main>}
+      <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <Footer />
     </div>
   );

@@ -144,7 +144,7 @@ export type Database = {
           name: string
           reference_images: string[]
           status: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           budget_range?: string | null
@@ -155,7 +155,7 @@ export type Database = {
           name: string
           reference_images?: string[]
           status?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           budget_range?: string | null
@@ -166,7 +166,7 @@ export type Database = {
           name?: string
           reference_images?: string[]
           status?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

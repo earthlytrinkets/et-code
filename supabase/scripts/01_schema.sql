@@ -393,7 +393,7 @@ GRANT EXECUTE ON FUNCTION public.get_verified_top_reviews(INT) TO anon, authenti
 
 CREATE TABLE IF NOT EXISTS public.custom_orders (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id          UUID        REFERENCES auth.users(id),
+  user_id          UUID        NOT NULL REFERENCES auth.users(id),
   name             TEXT        NOT NULL,
   email            TEXT        NOT NULL,
   description      TEXT        NOT NULL,
@@ -406,9 +406,9 @@ CREATE TABLE IF NOT EXISTS public.custom_orders (
 
 ALTER TABLE public.custom_orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Anyone can submit custom orders"
-  ON public.custom_orders FOR INSERT
-  WITH CHECK (true);
+CREATE POLICY "Authenticated users can submit custom orders"
+  ON public.custom_orders FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Admins can read custom orders"
   ON public.custom_orders FOR SELECT

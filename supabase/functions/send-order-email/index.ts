@@ -286,13 +286,7 @@ function orderDeliveredEmail(order: Order) {
     .map((i, idx, arr) => {
       const url = `${SITE_URL}/product/${i.products!.slug}#reviews`;
       const borderBottom = idx < arr.length - 1 ? `border-bottom:1px solid ${C.border};` : "";
-      const stars = [1, 2, 3, 4, 5].map((n) => {
-        const emoji = "&#11088;".repeat(n);
-        const bg = n === 5 ? C.green : C.white;
-        const border = n === 5 ? C.green : C.border;
-        const color = n === 5 ? "#fff" : C.text;
-        return `<a href="${url}" style="display:inline-block;background:${bg};border:1px solid ${border};border-radius:6px;padding:5px 7px;font-size:13px;text-decoration:none;line-height:1;color:${color}">${emoji}</a>`;
-      }).join(" ");
+      const stars = `<a href="${url}" style="text-decoration:none;font-size:20px;letter-spacing:3px;color:#d4a853;opacity:0.6">&#9733;&#9733;&#9733;&#9733;&#9733;</a>`;
 
       return `
       <div style="padding:16px 0;text-align:center;${borderBottom}">

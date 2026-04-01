@@ -106,10 +106,6 @@ CREATE POLICY "Users upload own custom order images" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = auth.uid()::text);
 
-CREATE POLICY "Anon upload custom order images" ON storage.objects
-  FOR INSERT TO anon
-  WITH CHECK (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = 'anonymous');
-
 CREATE POLICY "Users delete own custom order images" ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'custom-order-images' AND (storage.foldername(name))[1] = auth.uid()::text);

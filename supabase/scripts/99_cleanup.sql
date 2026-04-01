@@ -118,9 +118,13 @@ DELETE FROM auth.users;
 -- Storage
 DELETE FROM storage.objects WHERE bucket_id = 'product-images';
 
--- Re-seed categories (update these if your categories have changed)
+-- Re-seed categories
 INSERT INTO categories (name, slug) VALUES
-  ('Jewellery', 'jewellery'),
-  ('Pendants', 'pendants'),
+  ('Rings',        'rings'),
+  ('Earrings',     'earrings'),
+  ('Necklaces',    'necklaces'),
+  ('Bracelets',    'bracelets'),
+  ('Pendants',     'pendants'),
   ('Paperweights', 'paperweights'),
-  ('Home Decor', 'home-decor');
+  ('Home Decor',   'home-decor'),
+  ('Keychains',    'keychains');
