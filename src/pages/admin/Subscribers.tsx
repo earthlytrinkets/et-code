@@ -232,52 +232,52 @@ export const AdminSubscribersSection = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
-        {(["all", "active", "unsubscribed"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`rounded-full px-4 py-1.5 font-body text-xs font-medium capitalize transition-colors ${
-              statusFilter === s
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {/* Bulk actions */}
-      {subscribers.length > 0 && (
-        <div className="flex justify-end gap-2">
-          {unsubscribedCount > 0 && (
+      {/* Filters + Bulk actions */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex gap-2">
+          {(["all", "active", "unsubscribed"] as const).map((s) => (
             <button
-              onClick={() => {
-                if (confirm(`Resubscribe all ${unsubscribedCount} unsubscribed subscriber${unsubscribedCount !== 1 ? "s" : ""}?`))
-                  bulkUpdate.mutate("active");
-              }}
-              disabled={bulkUpdate.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 px-3 py-1.5 font-body text-xs font-medium text-green-800 transition-colors hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`rounded-full px-4 py-1.5 font-body text-xs font-medium capitalize transition-colors ${
+                statusFilter === s
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <UserCheck size={13} /> Subscribe All
+              {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
-          )}
-          {activeCount > 0 && (
-            <button
-              onClick={() => {
-                if (confirm(`Unsubscribe all ${activeCount} active subscriber${activeCount !== 1 ? "s" : ""}?`))
-                  bulkUpdate.mutate("unsubscribed");
-              }}
-              disabled={bulkUpdate.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 font-body text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
-            >
-              <UserX size={13} /> Unsubscribe All
-            </button>
-          )}
+          ))}
         </div>
-      )}
+        {subscribers.length > 0 && (
+          <div className="flex gap-2">
+            {unsubscribedCount > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm(`Resubscribe all ${unsubscribedCount} unsubscribed subscriber${unsubscribedCount !== 1 ? "s" : ""}?`))
+                    bulkUpdate.mutate("active");
+                }}
+                disabled={bulkUpdate.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-green-100 px-3 py-1.5 font-body text-xs font-medium text-green-800 transition-colors hover:bg-green-200 disabled:opacity-50 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+              >
+                <UserCheck size={13} /> Subscribe All
+              </button>
+            )}
+            {activeCount > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm(`Unsubscribe all ${activeCount} active subscriber${activeCount !== 1 ? "s" : ""}?`))
+                    bulkUpdate.mutate("unsubscribed");
+                }}
+                disabled={bulkUpdate.isPending}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 font-body text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                <UserX size={13} /> Unsubscribe All
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* List */}
       {isLoading ? (
