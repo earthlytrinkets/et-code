@@ -162,12 +162,13 @@ async function createInvoice(orderId: string) {
     },
   };
 
-  // Prepaid: link the existing Razorpay order_id so the invoice auto-marks as paid.
-  //          Customer gets an invoice email showing "Paid".
-  // COD:     created as issued — customer gets invoice email with payment pending.
+  // Prepaid: create as issued, then immediately cancel after saving the ID.
+  //          Customer gets the invoice email as a receipt. Cancelled status = no "Pay" button.
+  // COD:     created as issued — customer gets invoice email with payment link.
   //          Cancelled when order is delivered (payment collected offline).
-  if (isPrepaid && order.razorpay_order_id) {
-    invoicePayload.order_id = order.razorpay_order_id;
+  if (isPrepaid) {
+    invoicePayload.description = `Order ${oid} — Earthly Trinkets (Paid via Razorpay)`;
+    invoicePayload.notes.razorpay_payment_id = order.razorpay_payment_id ?? "";
   }
 
   console.log("Creating Razorpay invoice for order:", oid, "method:", order.payment_method);
@@ -193,11 +194,28 @@ async function createInvoice(orderId: string) {
     .update({ razorpay_invoice_id: invoice.id })
     .eq("id", orderId);
 
+  // For prepaid: cancel immediately so "Proceed to Pay" link is disabled.
+  // The customer already received the invoice email with all item details.
+  let finalStatus = invoice.status;
+  if (isPrepaid) {
+    console.log("Cancelling prepaid invoice (already paid):", invoice.id);
+    const cancelRes = await fetch(`${RAZORPAY_BASE}/invoices/${invoice.id}/cancel`, {
+      method: "POST",
+      headers: razorpayHeaders(),
+    });
+    if (cancelRes.ok) {
+      finalStatus = "cancelled";
+    } else {
+      const cancelBody = await cancelRes.text();
+      console.error("Failed to cancel prepaid invoice:", cancelRes.status, cancelBody);
+    }
+  }
+
   return json({
     ok: true,
     invoice_id: invoice.id,
     short_url: invoice.short_url,
-    status: invoice.status,
+    status: finalStatus,
   });
 }
 
