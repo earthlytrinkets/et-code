@@ -789,13 +789,6 @@ serve(async (req) => {
 
     await Promise.all(tasks);
 
-    // Generate Razorpay invoice for new orders (fire-and-forget, don't block email)
-    if (event === "order_placed") {
-      supabase.functions.invoke("create-invoice", {
-        body: { action: "create", orderId },
-      }).catch((e: unknown) => console.error("Invoice creation failed:", e));
-    }
-
     return new Response(JSON.stringify({ success: true }), { headers: CORS });
 
   } catch (err) {
